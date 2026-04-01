@@ -1,306 +1,932 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Group Order CRM — The Uniform Store</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; height: 100vh; overflow: hidden; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      height: 100vh;
+      overflow: hidden;
+    }
 
     /* ── Header ── */
-    .header { background: #1e3a5f; color: white; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-    .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
-    .header h1 span { color: #7dd3fc; }
-    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .header {
+      background: #1e3a5f;
+      color: white;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header .logo {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .header .logo svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    .header .brand-name {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #7dd3fc;
+      white-space: nowrap;
+      letter-spacing: -0.2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
 
     /* ── Stats bar ── */
-    .stats-bar { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; gap: 24px; overflow-x: auto; }
-    .stat { display: flex; flex-direction: column; align-items: center; min-width: 80px; }
-    .stat-value { font-size: 20px; font-weight: 700; color: #1e3a5f; }
-    .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
+    .stats-bar {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 24px;
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 80px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e3a5f;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 1px;
+    }
 
     /* ── Board ── */
-    .board-wrapper { padding: 16px 24px; overflow-x: auto; height: calc(100vh - 56px - 53px); }
-    .board { display: flex; gap: 12px; min-width: max-content; height: 100%; }
+    .board-wrapper {
+      padding: 16px 24px;
+      overflow-x: auto;
+      height: calc(100vh - 56px - 53px);
+    }
+
+    .board {
+      display: flex;
+      gap: 12px;
+      min-width: max-content;
+      height: 100%;
+    }
 
     /* ── Columns ── */
-    .column { width: 265px; display: flex; flex-direction: column; background: #e8ecf0; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
-    .col-header { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
-    .col-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; }
-    .col-count { background: rgba(0,0,0,0.15); color: inherit; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 20px; }
-    .col-cards { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
-    .col-cards::-webkit-scrollbar { width: 4px; }
-    .col-cards::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+    .column {
+      width: 265px;
+      display: flex;
+      flex-direction: column;
+      background: #e8ecf0;
+      border-radius: 10px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .col-header {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .col-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+
+    .col-count {
+      background: rgba(0, 0, 0, 0.15);
+      color: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 20px;
+    }
+
+    .col-cards {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .col-cards::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .col-cards::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 2px;
+    }
 
     /* Stage colours */
-    .stage-new_lead  .col-header { background: #3b82f6; color: white; }
-    .stage-discovery .col-header { background: #8b5cf6; color: white; }
-    .stage-quoting   .col-header { background: #f97316; color: white; }
-    .stage-follow_up .col-header { background: #eab308; color: #1a1a1a; }
-    .stage-won       .col-header { background: #22c55e; color: white; }
-    .stage-lost      .col-header { background: #94a3b8; color: white; }
+    .stage-new_lead .col-header {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .stage-discovery .col-header {
+      background: #8b5cf6;
+      color: white;
+    }
+
+    .stage-quoting .col-header {
+      background: #f97316;
+      color: white;
+    }
+
+    .stage-follow_up .col-header {
+      background: #eab308;
+      color: #1a1a1a;
+    }
+
+    .stage-won .col-header {
+      background: #22c55e;
+      color: white;
+    }
+
+    .stage-lost .col-header {
+      background: #94a3b8;
+      color: white;
+    }
 
     /* ── Cards ── */
-    .card { background: white; border-radius: 8px; padding: 12px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .card:hover { border-color: #bfdbfe; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
-    .card.overdue { border-left: 3px solid #ef4444; }
-    .card-org { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-contact { font-size: 12px; color: #64748b; margin-bottom: 6px; }
-    .card-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .card:hover {
+      border-color: #bfdbfe;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .card.overdue {
+      border-left: 3px solid #ef4444;
+    }
+
+    .card-org {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-contact {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
 
     /* Badges */
-    .badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
-    .badge-us       { background: #dbeafe; color: #1d4ed8; }
-    .badge-them     { background: #fce7f3; color: #9d174d; }
-    .badge-value    { background: #f0fdf4; color: #15803d; }
-    .badge-overdue  { background: #fee2e2; color: #b91c1c; }
-    .badge-followup { background: #fef9c3; color: #a16207; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    .badge-us {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge-them {
+      background: #fce7f3;
+      color: #9d174d;
+    }
+
+    .badge-value {
+      background: #f0fdf4;
+      color: #15803d;
+    }
+
+    .badge-overdue {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .badge-followup {
+      background: #fef9c3;
+      color: #a16207;
+    }
 
     /* Add card */
-    .add-card-btn { width: 100%; padding: 8px; background: transparent; border: 1.5px dashed #cbd5e1; border-radius: 8px; color: #94a3b8; font-size: 12px; cursor: pointer; transition: all 0.15s; margin-top: 2px; }
-    .add-card-btn:hover { background: white; border-color: #94a3b8; color: #64748b; }
+    .add-card-btn {
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 2px;
+    }
+
+    .add-card-btn:hover {
+      background: white;
+      border-color: #94a3b8;
+      color: #64748b;
+    }
 
     /* ── Side Panel ── */
-    .side-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 490px; background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.12); z-index: 200; transform: translateX(100%); transition: transform 0.25s ease; display: flex; flex-direction: column; }
-    .side-panel.open { transform: translateX(0); }
-    .panel-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
-    .panel-org { font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-    .panel-header-row { display: flex; align-items: center; gap: 8px; }
-    .panel-close { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 20px; padding: 0 4px; line-height: 1; margin-left: auto; }
-    .panel-close:hover { color: #475569; }
-    .panel-stage-select { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1.5px solid #e2e8f0; background: #f8fafc; cursor: pointer; color: #475569; }
+    .side-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 490px;
+      background: white;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-panel.open {
+      transform: translateX(0);
+    }
+
+    .panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .panel-org {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .panel-header-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #94a3b8;
+      font-size: 20px;
+      padding: 0 4px;
+      line-height: 1;
+      margin-left: auto;
+    }
+
+    .panel-close:hover {
+      color: #475569;
+    }
+
+    .panel-stage-select {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      cursor: pointer;
+      color: #475569;
+    }
 
     /* Tabs */
-    .panel-tabs { display: flex; border-bottom: 1px solid #e2e8f0; padding: 0 20px; }
-    .tab { padding: 10px 14px; font-size: 13px; font-weight: 500; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-    .tab.active { color: #1e3a5f; border-bottom-color: #1e3a5f; }
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 20px;
+    }
+
+    .tab {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #94a3b8;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab.active {
+      color: #1e3a5f;
+      border-bottom-color: #1e3a5f;
+    }
 
     /* Panel body */
-    .panel-body { flex: 1; overflow-y: auto; padding: 20px; }
-    .panel-body::-webkit-scrollbar { width: 4px; }
-    .panel-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .panel-body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .panel-body::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 2px;
+    }
 
     /* Fields */
-    .field-group { margin-bottom: 14px; }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .field-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .field-input { width: 100%; padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #1e293b; background: #f8fafc; transition: border-color 0.15s; font-family: inherit; }
-    .field-input:focus { outline: none; border-color: #3b82f6; background: white; }
-    .field-textarea { resize: vertical; min-height: 70px; }
-    .field-checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151; }
+    .field-group {
+      margin-bottom: 14px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .field-input {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1e293b;
+      background: #f8fafc;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+
+    .field-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: white;
+    }
+
+    .field-textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .field-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #374151;
+    }
 
     /* Section headers */
-    .section-header { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+    .section-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 18px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f1f5f9;
+    }
 
     /* Panel footer */
-    .panel-footer { padding: 14px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; }
+    .panel-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 8px;
+    }
 
     /* Activity log */
-    .activity-log { display: flex; flex-direction: column; }
-    .activity-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-    .activity-item:last-child { border-bottom: none; }
-    .activity-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
-    .activity-body { flex: 1; }
-    .activity-meta { font-size: 11px; color: #94a3b8; }
-    .activity-notes { font-size: 13px; color: #374151; margin-top: 2px; line-height: 1.4; }
-    .activity-type-note          { background: #f1f5f9; }
-    .activity-type-call          { background: #dbeafe; }
-    .activity-type-email         { background: #fce7f3; }
-    .activity-type-stage_change  { background: #dcfce7; }
-    .activity-type-quote_sent    { background: #fed7aa; }
-    .activity-type-follow_up_sent{ background: #fef9c3; }
+    .activity-log {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .activity-body {
+      flex: 1;
+    }
+
+    .activity-meta {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .activity-notes {
+      font-size: 13px;
+      color: #374151;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .activity-type-note {
+      background: #f1f5f9;
+    }
+
+    .activity-type-call {
+      background: #dbeafe;
+    }
+
+    .activity-type-email {
+      background: #fce7f3;
+    }
+
+    .activity-type-stage_change {
+      background: #dcfce7;
+    }
+
+    .activity-type-quote_sent {
+      background: #fed7aa;
+    }
+
+    .activity-type-follow_up_sent {
+      background: #fef9c3;
+    }
 
     /* Add activity */
-    .add-activity { background: #f8fafc; border-radius: 8px; padding: 14px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
-    .add-activity-title { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 10px; }
-    .type-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-    .type-chip { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1.5px solid #e2e8f0; background: white; cursor: pointer; color: #64748b; transition: all 0.15s; }
-    .type-chip.selected { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+    .add-activity {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .add-activity-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .type-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .type-chip {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1.5px solid #e2e8f0;
+      background: white;
+      cursor: pointer;
+      color: #64748b;
+      transition: all 0.15s;
+    }
+
+    .type-chip.selected {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
 
     /* ── Modal ── */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-    .modal-overlay.open { display: flex; }
-    .modal { background: white; border-radius: 12px; width: 580px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-    .modal-title { font-size: 16px; font-weight: 700; color: #1e293b; }
-    .modal-body { padding: 20px 24px; }
-    .modal-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; justify-content: flex-end; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      width: 580px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .modal-body {
+      padding: 20px 24px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
 
     /* ── Buttons ── */
-    .btn { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; font-family: inherit; }
-    .btn-primary   { background: #1e3a5f; color: white; }
-    .btn-primary:hover   { background: #2d5490; }
-    .btn-secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
-    .btn-secondary:hover { background: #e2e8f0; }
-    .btn-danger    { background: #fee2e2; color: #b91c1c; }
-    .btn-danger:hover    { background: #fecaca; }
-    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn {
+      padding: 7px 16px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: #1e3a5f;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2d5490;
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1.5px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .btn-danger:hover {
+      background: #fecaca;
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 12px;
+    }
 
     /* ── Toast ── */
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1e293b; color: white; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 999; transition: transform 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 999;
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
 
     /* ── Misc ── */
-    .empty-col { text-align: center; padding: 20px 10px; color: #cbd5e1; font-size: 12px; }
-    .loading { display: flex; align-items: center; justify-content: center; height: 100px; color: #94a3b8; font-size: 13px; gap: 8px; }
+    .empty-col {
+      text-align: center;
+      padding: 20px 10px;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100px;
+      color: #94a3b8;
+      font-size: 13px;
+      gap: 8px;
+    }
   </style>
 </head>
+
 <body>
 
-<div id="app">
+  <div id="app">
 
-  <!-- Header -->
-  <div class="header">
-    <h1>Group Order <span>CRM</span></h1>
-    <div class="header-actions">
-      <button class="btn btn-secondary btn-sm" onclick="loadLeads()">↻ Refresh</button>
-      <button class="btn btn-primary btn-sm" onclick="openNewLeadModal()">+ New Lead</button>
-    </div>
-  </div>
-
-  <!-- Stats Bar -->
-  <div class="stats-bar">
-    <div class="stat"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Leads</div></div>
-    <div class="stat"><div class="stat-value" id="stat-pipeline">—</div><div class="stat-label">Active</div></div>
-    <div class="stat"><div class="stat-value" id="stat-value">—</div><div class="stat-label">Pipeline Value</div></div>
-    <div class="stat"><div class="stat-value" id="stat-overdue">—</div><div class="stat-label">Overdue</div></div>
-    <div class="stat"><div class="stat-value" id="stat-them">—</div><div class="stat-label">Ball in Their Court</div></div>
-    <div class="stat"><div class="stat-value" id="stat-won">—</div><div class="stat-label">Won (30d)</div></div>
-  </div>
-
-  <!-- Board -->
-  <div class="board-wrapper">
-    <div class="board" id="board">
-      <div class="loading">⏳ Loading leads…</div>
-    </div>
-  </div>
-
-  <!-- Backdrop -->
-  <div id="backdrop" style="position:fixed;inset:0;z-index:150;display:none;" onclick="closePanel()"></div>
-
-  <!-- Side Panel -->
-  <div class="side-panel" id="sidePanel">
-    <div class="panel-header">
-      <div class="panel-org" id="panelOrg">—</div>
-      <div class="panel-header-row">
-        <select class="panel-stage-select" id="panelStage" onchange="updateLeadStage(this.value)">
-          <option value="new_lead">🆕 New Lead</option>
-          <option value="discovery">🔍 Discovery</option>
-          <option value="quoting">📋 Quoting</option>
-          <option value="follow_up">📬 Follow-up</option>
-          <option value="won">🏆 Won</option>
-          <option value="lost">❌ Lost</option>
-        </select>
-        <div id="panelLastContact"></div>
-        <button class="panel-close" onclick="closePanel()">✕</button>
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg viewBox="0 0 220 220" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve"
+            style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+            <g>
+              <circle cx="109.644" cy="109.644" r="109.644" style="fill:#fff;" />
+              <circle cx="109.644" cy="109.644" r="98.644" style="fill:#036;" />
+              <path
+                d="M188.756,79.58c0,-1.793 -3.108,-2.294 -4.943,-2.674c-3.674,-0.76 -11.628,-1.885 -17.101,-1.885c-6.721,0 -15.625,0.096 -23.042,5.722c-3.99,3.027 -5.628,8.923 -5.628,13.931c0,4.044 -0.7,12.368 8.022,19.038c5.55,4.244 25.855,6.443 25.256,12.545c-0.374,3.803 -5.463,4.604 -9.206,4.582c-4.645,-0.026 -15.187,-1.888 -18.604,-2.795c-1.539,-0.408 -2.571,0.072 -2.771,0.98c-0.528,2.396 -2.193,9.657 -2.8,12.435c-0.232,1.062 -0.252,1.84 0.766,2.221c4.013,1.502 11.065,4.015 23.716,4.015c9.191,-0 29.842,-1.94 30.473,-19.839c0.541,-15.355 -10.279,-20.555 -15.059,-22.271c-6.18,-2.219 -18.664,-4.21 -18.578,-9.159c0.058,-3.322 4.89,-4.119 10.906,-4.119c6.016,0 13.103,2.133 16.061,2.802c0.814,0.184 1.87,-0.771 1.922,-1.603c0.172,-2.73 0.61,-11.191 0.61,-13.926Z"
+                style="fill:#fff;" />
+              <path
+                d="M101.201,101.33c-0,-0.67 -0.454,-1.056 -1.223,-1.056l-18.065,-0c-0.555,-0 -1.089,0.458 -1.089,1.259l-0,24.216c-0,12.695 7.952,21.33 26.556,21.33c18.604,-0 28.565,-9.199 28.565,-23.923c0,-1.152 -0.059,-34.375 -0.059,-45.383c0,-0.919 -0.7,-1.326 -1.272,-1.326c-4.197,-0 -15.852,-0.136 -18.35,-0.136c-0.743,0 -0.813,0.491 -0.813,1.087c-0,6.148 0.216,42.436 0.216,43.739c0,8.65 -4.696,9.942 -7.107,9.887c-2.412,-0.055 -7.359,-1.367 -7.359,-10.22l-0,-19.474Z"
+                style="fill:#ff6f00;" />
+              <path
+                d="M101.216,76.694c0,-0.521 -0.251,-0.904 -0.9,-0.904l-69.149,0c-0.863,0 -1.078,0.608 -1.078,0.921l0,17.25c0,0.723 0.562,1.147 1.114,1.147l16.297,0c0.388,0 0.606,0.505 0.61,0.761c0.119,7.627 0.176,42.122 0.186,48.891c0.001,0.746 0.469,1.162 1.214,1.162c3.177,0 16.502,0.134 19.813,0.134c0.454,0 0.75,-0.446 0.75,-1.136c-0,-6.769 0.098,-41.592 0.209,-49.25c0.002,-0.189 -0.088,-0.562 0.521,-0.562l29.341,0c0.665,0 1.072,-0.474 1.072,-1.139l0,-17.275Z"
+                style="fill:#fff;" />
+            </g>
+          </svg>
+        </div>
+        <span class="brand-name">The Uniform Store</span>
+      </div>
+      <div class="header-right">
+        <h1>Group Order CRM</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" onclick="loadLeads()">↻ Refresh</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewLeadModal()">+ New Lead</button>
+        </div>
       </div>
     </div>
-    <div class="panel-tabs">
-      <div class="tab active" onclick="switchTab('details', this)">Details</div>
-      <div class="tab" onclick="switchTab('activity', this)">Activity Log</div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-label">Total Leads</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-pipeline">—</div>
+        <div class="stat-label">Active</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-value">—</div>
+        <div class="stat-label">Pipeline Value</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-overdue">—</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-them">—</div>
+        <div class="stat-label">Ball in Their Court</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-won">—</div>
+        <div class="stat-label">Won (30d)</div>
+      </div>
     </div>
-    <div class="panel-body" id="panelBody"></div>
-    <div class="panel-footer">
-      <button class="btn btn-primary btn-sm" onclick="saveLeadDetails()">Save Changes</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteLead()">Delete Lead</button>
+
+    <!-- Board -->
+    <div class="board-wrapper">
+      <div class="board" id="board">
+        <div class="loading">⏳ Loading leads…</div>
+      </div>
     </div>
+
+    <!-- Backdrop -->
+    <div id="backdrop" style="position:fixed;inset:0;z-index:150;display:none;" onclick="closePanel()"></div>
+
+    <!-- Side Panel -->
+    <div class="side-panel" id="sidePanel">
+      <div class="panel-header">
+        <div class="panel-org" id="panelOrg">—</div>
+        <div class="panel-header-row">
+          <select class="panel-stage-select" id="panelStage" onchange="updateLeadStage(this.value)">
+            <option value="new_lead">🆕 New Lead</option>
+            <option value="discovery">🔍 Discovery</option>
+            <option value="quoting">📋 Quoting</option>
+            <option value="follow_up">📬 Follow-up</option>
+            <option value="won">🏆 Won</option>
+            <option value="lost">❌ Lost</option>
+          </select>
+          <div id="panelLastContact"></div>
+          <button class="panel-close" onclick="closePanel()">✕</button>
+        </div>
+      </div>
+      <div class="panel-tabs">
+        <div class="tab active" onclick="switchTab('details', this)">Details</div>
+        <div class="tab" onclick="switchTab('activity', this)">Activity Log</div>
+      </div>
+      <div class="panel-body" id="panelBody"></div>
+      <div class="panel-footer">
+        <button class="btn btn-primary btn-sm" onclick="saveLeadDetails()">Save Changes</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteLead()">Delete Lead</button>
+      </div>
+    </div>
+
+    <!-- New Lead Modal -->
+    <div class="modal-overlay" id="leadModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">New Group Order Lead</div>
+          <button class="panel-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveNewLead()">Create Lead</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
   </div>
 
-  <!-- New Lead Modal -->
-  <div class="modal-overlay" id="leadModal">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">New Group Order Lead</div>
-        <button class="panel-close" onclick="closeModal()">✕</button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveNewLead()">Create Lead</button>
-      </div>
-    </div>
-  </div>
+  <script>
+    // ─────────────────────────────────────────────────────────────────────────────
+    // CONFIG
+    // ─────────────────────────────────────────────────────────────────────────────
+    const SUPABASE_URL = 'https://yqvzausypbgiwutwxmtk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxdnphdXN5cGJnaXd1dHd4bXRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODE1NzUsImV4cCI6MjA4OTc1NzU3NX0.HNNql_MbmfoDl69LeJr26zyP-CyXu45JOvWbYHh0e4c';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
+    const STAGES = [
+      { key: 'new_lead', label: 'New Lead', emoji: '🆕' },
+      { key: 'discovery', label: 'Discovery', emoji: '🔍' },
+      { key: 'quoting', label: 'Quoting', emoji: '📋' },
+      { key: 'follow_up', label: 'Follow-up', emoji: '📬' },
+      { key: 'won', label: 'Won ✓', emoji: '🏆' },
+      { key: 'lost', label: 'Lost', emoji: '❌' },
+    ];
 
-</div>
+    const ACTIVITY_TYPES = [
+      { key: 'note', label: 'Note', icon: '📝' },
+      { key: 'call', label: 'Call', icon: '📞' },
+      { key: 'email', label: 'Email', icon: '✉️' },
+      { key: 'quote_sent', label: 'Quote Sent', icon: '📋' },
+      { key: 'follow_up_sent', label: 'Follow-up', icon: '📬' },
+      { key: 'stage_change', label: 'Stage', icon: '🔄' },
+    ];
 
-<script>
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://yqvzausypbgiwutwxmtk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxdnphdXN5cGJnaXd1dHd4bXRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODE1NzUsImV4cCI6MjA4OTc1NzU3NX0.HNNql_MbmfoDl69LeJr26zyP-CyXu45JOvWbYHh0e4c';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let state = {
+      leads: [],
+      selectedLeadId: null,
+      activities: [],
+      activeTab: 'details',
+      selectedActivityType: 'note',
+    };
 
-const STAGES = [
-  { key: 'new_lead',   label: 'New Lead',   emoji: '🆕' },
-  { key: 'discovery',  label: 'Discovery',  emoji: '🔍' },
-  { key: 'quoting',    label: 'Quoting',    emoji: '📋' },
-  { key: 'follow_up',  label: 'Follow-up',  emoji: '📬' },
-  { key: 'won',        label: 'Won ✓',      emoji: '🏆' },
-  { key: 'lost',       label: 'Lost',       emoji: '❌' },
-];
+    // ─────────────────────────────────────────────────────────────────────────────
+    // DATA
+    // ─────────────────────────────────────────────────────────────────────────────
+    async function init() {
+      await loadLeads();
+    }
 
-const ACTIVITY_TYPES = [
-  { key: 'note',            label: 'Note',        icon: '📝' },
-  { key: 'call',            label: 'Call',        icon: '📞' },
-  { key: 'email',           label: 'Email',       icon: '✉️'  },
-  { key: 'quote_sent',      label: 'Quote Sent',  icon: '📋' },
-  { key: 'follow_up_sent',  label: 'Follow-up',   icon: '📬' },
-  { key: 'stage_change',    label: 'Stage',       icon: '🔄' },
-];
+    async function loadLeads() {
+      const { data, error } = await db
+        .from('group_order_leads')
+        .select('*')
+        .order('updated_at', { ascending: false });
 
-let state = {
-  leads: [],
-  selectedLeadId: null,
-  activities: [],
-  activeTab: 'details',
-  selectedActivityType: 'note',
-};
+      if (error) { showToast('Error loading leads: ' + error.message, 'error'); return; }
+      state.leads = data || [];
+      renderBoard();
+      updateStats();
+    }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DATA
-// ─────────────────────────────────────────────────────────────────────────────
-async function init() {
-  await loadLeads();
-}
+    async function loadActivities(leadId) {
+      const { data, error } = await db
+        .from('group_order_activities')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
 
-async function loadLeads() {
-  const { data, error } = await db
-    .from('group_order_leads')
-    .select('*')
-    .order('updated_at', { ascending: false });
+      if (error) { showToast('Error loading activity', 'error'); return []; }
+      state.activities = data || [];
+      return data;
+    }
 
-  if (error) { showToast('Error loading leads: ' + error.message, 'error'); return; }
-  state.leads = data || [];
-  renderBoard();
-  updateStats();
-}
-
-async function loadActivities(leadId) {
-  const { data, error } = await db
-    .from('group_order_activities')
-    .select('*')
-    .eq('lead_id', leadId)
-    .order('created_at', { ascending: false });
-
-  if (error) { showToast('Error loading activity', 'error'); return []; }
-  state.activities = data || [];
-  return data;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BOARD
-// ─────────────────────────────────────────────────────────────────────────────
-function renderBoard() {
-  const board = document.getElementById('board');
-  board.innerHTML = STAGES.map(stage => {
-    const leads = state.leads.filter(l => l.stage === stage.key);
-    return `
+    // ─────────────────────────────────────────────────────────────────────────────
+    // BOARD
+    // ─────────────────────────────────────────────────────────────────────────────
+    function renderBoard() {
+      const board = document.getElementById('board');
+      board.innerHTML = STAGES.map(stage => {
+        const leads = state.leads.filter(l => l.stage === stage.key);
+        return `
       <div class="column stage-${stage.key}">
         <div class="col-header">
           <span class="col-title">${stage.emoji} ${stage.label}</span>
@@ -314,30 +940,30 @@ function renderBoard() {
         </div>
       </div>
     `;
-  }).join('');
-}
+      }).join('');
+    }
 
-function renderCard(lead) {
-  const today = new Date().toISOString().split('T')[0];
-  const isOverdue = lead.next_followup_date
-    && lead.next_followup_date < today
-    && !['won', 'lost'].includes(lead.stage);
+    function renderCard(lead) {
+      const today = new Date().toISOString().split('T')[0];
+      const isOverdue = lead.next_followup_date
+        && lead.next_followup_date < today
+        && !['won', 'lost'].includes(lead.stage);
 
-  const valueBadge = lead.estimated_value
-    ? `<span class="badge badge-value">$${Number(lead.estimated_value).toLocaleString()}</span>`
-    : '';
+      const valueBadge = lead.estimated_value
+        ? `<span class="badge badge-value">$${Number(lead.estimated_value).toLocaleString()}</span>`
+        : '';
 
-  const lcBadge = lead.last_contact_by
-    ? `<span class="badge ${lead.last_contact_by === 'us' ? 'badge-us' : 'badge-them'}">${lead.last_contact_by === 'us' ? '↑ Us' : '↓ Them'}</span>`
-    : '';
+      const lcBadge = lead.last_contact_by
+        ? `<span class="badge ${lead.last_contact_by === 'us' ? 'badge-us' : 'badge-them'}">${lead.last_contact_by === 'us' ? '↑ Us' : '↓ Them'}</span>`
+        : '';
 
-  const followupBadge = isOverdue
-    ? `<span class="badge badge-overdue">⚠ Overdue</span>`
-    : (lead.next_followup_date
-        ? `<span class="badge badge-followup">📅 ${formatDate(lead.next_followup_date)}</span>`
-        : '');
+      const followupBadge = isOverdue
+        ? `<span class="badge badge-overdue">⚠ Overdue</span>`
+        : (lead.next_followup_date
+          ? `<span class="badge badge-followup">📅 ${formatDate(lead.next_followup_date)}</span>`
+          : '');
 
-  return `
+      return `
     <div class="card ${isOverdue ? 'overdue' : ''}" onclick="openLead('${lead.id}')">
       <div class="card-org" title="${esc(lead.org_name)}">${esc(lead.org_name)}</div>
       ${lead.contact_name ? `<div class="card-contact">${esc(lead.contact_name)}</div>` : ''}
@@ -348,74 +974,74 @@ function renderCard(lead) {
       </div>
     </div>
   `;
-}
+    }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STATS
-// ─────────────────────────────────────────────────────────────────────────────
-function updateStats() {
-  const active = state.leads.filter(l => !['won', 'lost'].includes(l.stage));
-  const pipelineValue = active.reduce((s, l) => s + (parseFloat(l.estimated_value) || 0), 0);
-  const today = new Date().toISOString().split('T')[0];
-  const overdue = active.filter(l => l.next_followup_date && l.next_followup_date < today).length;
-  const inTheirCourt = active.filter(l => l.last_contact_by === 'us').length; // we reached out last = waiting on them
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
-  const won30d = state.leads.filter(l => l.stage === 'won' && l.updated_at > thirtyDaysAgo).length;
+    // ─────────────────────────────────────────────────────────────────────────────
+    // STATS
+    // ─────────────────────────────────────────────────────────────────────────────
+    function updateStats() {
+      const active = state.leads.filter(l => !['won', 'lost'].includes(l.stage));
+      const pipelineValue = active.reduce((s, l) => s + (parseFloat(l.estimated_value) || 0), 0);
+      const today = new Date().toISOString().split('T')[0];
+      const overdue = active.filter(l => l.next_followup_date && l.next_followup_date < today).length;
+      const inTheirCourt = active.filter(l => l.last_contact_by === 'us').length;
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+      const won30d = state.leads.filter(l => l.stage === 'won' && l.updated_at > thirtyDaysAgo).length;
 
-  document.getElementById('stat-total').textContent   = state.leads.length;
-  document.getElementById('stat-pipeline').textContent = active.length;
-  document.getElementById('stat-value').textContent   = pipelineValue > 0 ? '$' + pipelineValue.toLocaleString() : '—';
-  document.getElementById('stat-overdue').textContent  = overdue;
-  document.getElementById('stat-them').textContent     = inTheirCourt;
-  document.getElementById('stat-won').textContent      = won30d;
-}
+      document.getElementById('stat-total').textContent = state.leads.length;
+      document.getElementById('stat-pipeline').textContent = active.length;
+      document.getElementById('stat-value').textContent = pipelineValue > 0 ? '$' + pipelineValue.toLocaleString() : '—';
+      document.getElementById('stat-overdue').textContent = overdue;
+      document.getElementById('stat-them').textContent = inTheirCourt;
+      document.getElementById('stat-won').textContent = won30d;
+    }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SIDE PANEL
-// ─────────────────────────────────────────────────────────────────────────────
-async function openLead(leadId) {
-  state.selectedLeadId = leadId;
-  state.activeTab = 'details';
-  const lead = state.leads.find(l => l.id === leadId);
-  if (!lead) return;
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SIDE PANEL
+    // ─────────────────────────────────────────────────────────────────────────────
+    async function openLead(leadId) {
+      state.selectedLeadId = leadId;
+      state.activeTab = 'details';
+      const lead = state.leads.find(l => l.id === leadId);
+      if (!lead) return;
 
-  document.getElementById('panelOrg').textContent = lead.org_name;
-  document.getElementById('panelStage').value = lead.stage;
-  updatePanelLastContact(lead.last_contact_by);
+      document.getElementById('panelOrg').textContent = lead.org_name;
+      document.getElementById('panelStage').value = lead.stage;
+      updatePanelLastContact(lead.last_contact_by);
 
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
 
-  renderDetailsTab(lead);
-  document.getElementById('sidePanel').classList.add('open');
-  document.getElementById('backdrop').style.display = 'block';
+      renderDetailsTab(lead);
+      document.getElementById('sidePanel').classList.add('open');
+      document.getElementById('backdrop').style.display = 'block';
 
-  await loadActivities(leadId);
-}
+      await loadActivities(leadId);
+    }
 
-function updatePanelLastContact(lc) {
-  const el = document.getElementById('panelLastContact');
-  if (!lc) { el.innerHTML = ''; return; }
-  el.innerHTML = `<span class="badge ${lc === 'us' ? 'badge-us' : 'badge-them'}">${lc === 'us' ? '↑ Last: Us' : '↓ Last: Them'}</span>`;
-}
+    function updatePanelLastContact(lc) {
+      const el = document.getElementById('panelLastContact');
+      if (!lc) { el.innerHTML = ''; return; }
+      el.innerHTML = `<span class="badge ${lc === 'us' ? 'badge-us' : 'badge-them'}">${lc === 'us' ? '↑ Last: Us' : '↓ Last: Them'}</span>`;
+    }
 
-function closePanel() {
-  document.getElementById('sidePanel').classList.remove('open');
-  document.getElementById('backdrop').style.display = 'none';
-  state.selectedLeadId = null;
-}
+    function closePanel() {
+      document.getElementById('sidePanel').classList.remove('open');
+      document.getElementById('backdrop').style.display = 'none';
+      state.selectedLeadId = null;
+    }
 
-function switchTab(tab, el) {
-  state.activeTab = tab;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const lead = state.leads.find(l => l.id === state.selectedLeadId);
-  if (!lead) return;
-  if (tab === 'details') renderDetailsTab(lead);
-  else renderActivityTab(lead);
-}
+    function switchTab(tab, el) {
+      state.activeTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      const lead = state.leads.find(l => l.id === state.selectedLeadId);
+      if (!lead) return;
+      if (tab === 'details') renderDetailsTab(lead);
+      else renderActivityTab(lead);
+    }
 
-function renderDetailsTab(lead) {
-  document.getElementById('panelBody').innerHTML = `
+    function renderDetailsTab(lead) {
+      document.getElementById('panelBody').innerHTML = `
 
     <div class="section-header">Contact Information</div>
     <div class="field-group">
@@ -484,7 +1110,7 @@ function renderDetailsTab(lead) {
         <div class="field-label">Last Contact By</div>
         <select class="field-input" id="f_last_contact_by" onchange="updatePanelLastContact(this.value)">
           <option value="">— Unknown —</option>
-          <option value="us"   ${lead.last_contact_by === 'us'   ? 'selected' : ''}>Us (we reached out last)</option>
+          <option value="us"   ${lead.last_contact_by === 'us' ? 'selected' : ''}>Us (we reached out last)</option>
           <option value="them" ${lead.last_contact_by === 'them' ? 'selected' : ''}>Them (they reached out last)</option>
         </select>
       </div>
@@ -501,18 +1127,18 @@ function renderDetailsTab(lead) {
       <textarea class="field-input field-textarea" id="f_internal_notes" placeholder="Anything the team should know…">${esc(lead.internal_notes || '')}</textarea>
     </div>
   `;
-}
+    }
 
-async function renderActivityTab(lead) {
-  document.getElementById('panelBody').innerHTML = `<div class="loading">⏳ Loading activity…</div>`;
-  await loadActivities(lead.id);
+    async function renderActivityTab(lead) {
+      document.getElementById('panelBody').innerHTML = `<div class="loading">⏳ Loading activity…</div>`;
+      await loadActivities(lead.id);
 
-  const actHtml = state.activities.length === 0
-    ? `<div class="empty-col" style="padding:30px 10px">No activity logged yet</div>`
-    : state.activities.map(a => {
-        const aType = ACTIVITY_TYPES.find(t => t.key === a.activity_type) || { icon: '•', label: a.activity_type };
-        const dirLabel = a.direction === 'inbound' ? ' · ← Inbound' : a.direction === 'outbound' ? ' · → Outbound' : '';
-        return `
+      const actHtml = state.activities.length === 0
+        ? `<div class="empty-col" style="padding:30px 10px">No activity logged yet</div>`
+        : state.activities.map(a => {
+          const aType = ACTIVITY_TYPES.find(t => t.key === a.activity_type) || { icon: '•', label: a.activity_type };
+          const dirLabel = a.direction === 'inbound' ? ' · ← Inbound' : a.direction === 'outbound' ? ' · → Outbound' : '';
+          return `
           <div class="activity-item">
             <div class="activity-icon activity-type-${a.activity_type}">${aType.icon}</div>
             <div class="activity-body">
@@ -521,9 +1147,9 @@ async function renderActivityTab(lead) {
             </div>
           </div>
         `;
-      }).join('');
+        }).join('');
 
-  document.getElementById('panelBody').innerHTML = `
+      document.getElementById('panelBody').innerHTML = `
     <div class="add-activity">
       <div class="add-activity-title">Log New Activity</div>
       <div class="type-chips" id="actTypeChips">
@@ -553,146 +1179,145 @@ async function renderActivityTab(lead) {
     <div class="section-header">History (${state.activities.length})</div>
     <div class="activity-log">${actHtml}</div>
   `;
-}
+    }
 
-function selectActivityType(type, el) {
-  state.selectedActivityType = type;
-  document.querySelectorAll('.type-chip').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-}
+    function selectActivityType(type, el) {
+      state.selectedActivityType = type;
+      document.querySelectorAll('.type-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ACTIONS
-// ─────────────────────────────────────────────────────────────────────────────
-async function updateLeadStage(newStage) {
-  if (!state.selectedLeadId) return;
-  const lead = state.leads.find(l => l.id === state.selectedLeadId);
-  const oldStage = lead.stage;
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ACTIONS
+    // ─────────────────────────────────────────────────────────────────────────────
+    async function updateLeadStage(newStage) {
+      if (!state.selectedLeadId) return;
+      const lead = state.leads.find(l => l.id === state.selectedLeadId);
+      const oldStage = lead.stage;
 
-  const { error } = await db
-    .from('group_order_leads')
-    .update({ stage: newStage })
-    .eq('id', state.selectedLeadId);
+      const { error } = await db
+        .from('group_order_leads')
+        .update({ stage: newStage })
+        .eq('id', state.selectedLeadId);
 
-  if (error) { showToast('Error updating stage', 'error'); return; }
+      if (error) { showToast('Error updating stage', 'error'); return; }
 
-  await db.from('group_order_activities').insert({
-    lead_id: state.selectedLeadId,
-    activity_type: 'stage_change',
-    notes: `Stage: ${formatStage(oldStage)} → ${formatStage(newStage)}`,
-  });
+      await db.from('group_order_activities').insert({
+        lead_id: state.selectedLeadId,
+        activity_type: 'stage_change',
+        notes: `Stage: ${formatStage(oldStage)} → ${formatStage(newStage)}`,
+      });
 
-  showToast('Stage updated ✓');
-  await loadLeads();
-}
+      showToast('Stage updated ✓');
+      await loadLeads();
+    }
 
-async function saveLeadDetails() {
-  if (!state.selectedLeadId) return;
+    async function saveLeadDetails() {
+      if (!state.selectedLeadId) return;
 
-  const lc = document.getElementById('f_last_contact_by')?.value || null;
-  const lostEl = document.getElementById('f_lost_reason');
+      const lc = document.getElementById('f_last_contact_by')?.value || null;
+      const lostEl = document.getElementById('f_lost_reason');
 
-  const updates = {
-    org_name:           document.getElementById('f_org_name').value.trim(),
-    contact_name:       document.getElementById('f_contact_name').value.trim() || null,
-    contact_email:      document.getElementById('f_contact_email').value.trim() || null,
-    contact_phone:      document.getElementById('f_contact_phone').value.trim() || null,
-    brand_preferences:  document.getElementById('f_brand_preferences').value.trim() || null,
-    colour_preferences: document.getElementById('f_colour_preferences').value.trim() || null,
-    has_male_uniforms:  document.getElementById('f_male').checked,
-    has_female_uniforms:document.getElementById('f_female').checked,
-    embroidery_notes:   document.getElementById('f_embroidery_notes').value.trim() || null,
-    estimated_value:    document.getElementById('f_estimated_value').value || null,
-    item_count:         document.getElementById('f_item_count').value || null,
-    next_followup_date: document.getElementById('f_next_followup_date').value || null,
-    last_contact_by:    lc,
-    internal_notes:     document.getElementById('f_internal_notes').value.trim() || null,
-  };
-  if (lostEl) updates.lost_reason = lostEl.value.trim() || null;
+      const updates = {
+        org_name: document.getElementById('f_org_name').value.trim(),
+        contact_name: document.getElementById('f_contact_name').value.trim() || null,
+        contact_email: document.getElementById('f_contact_email').value.trim() || null,
+        contact_phone: document.getElementById('f_contact_phone').value.trim() || null,
+        brand_preferences: document.getElementById('f_brand_preferences').value.trim() || null,
+        colour_preferences: document.getElementById('f_colour_preferences').value.trim() || null,
+        has_male_uniforms: document.getElementById('f_male').checked,
+        has_female_uniforms: document.getElementById('f_female').checked,
+        embroidery_notes: document.getElementById('f_embroidery_notes').value.trim() || null,
+        estimated_value: document.getElementById('f_estimated_value').value || null,
+        item_count: document.getElementById('f_item_count').value || null,
+        next_followup_date: document.getElementById('f_next_followup_date').value || null,
+        last_contact_by: lc,
+        internal_notes: document.getElementById('f_internal_notes').value.trim() || null,
+      };
+      if (lostEl) updates.lost_reason = lostEl.value.trim() || null;
 
-  if (!updates.org_name) { showToast('Organisation name is required', 'error'); return; }
+      if (!updates.org_name) { showToast('Organisation name is required', 'error'); return; }
 
-  const { error } = await db
-    .from('group_order_leads')
-    .update(updates)
-    .eq('id', state.selectedLeadId);
+      const { error } = await db
+        .from('group_order_leads')
+        .update(updates)
+        .eq('id', state.selectedLeadId);
 
-  if (error) { showToast('Error saving: ' + error.message, 'error'); return; }
+      if (error) { showToast('Error saving: ' + error.message, 'error'); return; }
 
-  showToast('Saved ✓');
-  document.getElementById('panelOrg').textContent = updates.org_name;
-  updatePanelLastContact(lc);
-  await loadLeads();
-}
+      showToast('Saved ✓');
+      document.getElementById('panelOrg').textContent = updates.org_name;
+      updatePanelLastContact(lc);
+      await loadLeads();
+    }
 
-async function logActivity() {
-  if (!state.selectedLeadId) return;
+    async function logActivity() {
+      if (!state.selectedLeadId) return;
 
-  const notes     = document.getElementById('actNotes').value.trim() || null;
-  const direction = document.getElementById('actDirection').value || null;
-  const createdBy = document.getElementById('actCreatedBy').value.trim() || null;
+      const notes = document.getElementById('actNotes').value.trim() || null;
+      const direction = document.getElementById('actDirection').value || null;
+      const createdBy = document.getElementById('actCreatedBy').value.trim() || null;
 
-  // Auto-update last_contact_by from direction
-  if (direction === 'inbound') {
-    await db.from('group_order_leads').update({ last_contact_by: 'them' }).eq('id', state.selectedLeadId);
-  } else if (direction === 'outbound') {
-    await db.from('group_order_leads').update({ last_contact_by: 'us' }).eq('id', state.selectedLeadId);
-  }
+      if (direction === 'inbound') {
+        await db.from('group_order_leads').update({ last_contact_by: 'them' }).eq('id', state.selectedLeadId);
+      } else if (direction === 'outbound') {
+        await db.from('group_order_leads').update({ last_contact_by: 'us' }).eq('id', state.selectedLeadId);
+      }
 
-  const { error } = await db.from('group_order_activities').insert({
-    lead_id:       state.selectedLeadId,
-    activity_type: state.selectedActivityType,
-    notes,
-    direction,
-    created_by:    createdBy,
-  });
+      const { error } = await db.from('group_order_activities').insert({
+        lead_id: state.selectedLeadId,
+        activity_type: state.selectedActivityType,
+        notes,
+        direction,
+        created_by: createdBy,
+      });
 
-  if (error) { showToast('Error logging activity', 'error'); return; }
+      if (error) { showToast('Error logging activity', 'error'); return; }
 
-  showToast('Activity logged ✓');
-  await loadLeads();
+      showToast('Activity logged ✓');
+      await loadLeads();
 
-  const lead = state.leads.find(l => l.id === state.selectedLeadId);
-  if (lead) {
-    updatePanelLastContact(lead.last_contact_by);
-    await renderActivityTab(lead);
-  }
-}
+      const lead = state.leads.find(l => l.id === state.selectedLeadId);
+      if (lead) {
+        updatePanelLastContact(lead.last_contact_by);
+        await renderActivityTab(lead);
+      }
+    }
 
-async function deleteLead() {
-  if (!state.selectedLeadId) return;
-  const lead = state.leads.find(l => l.id === state.selectedLeadId);
-  if (!confirm(`Delete "${lead?.org_name}"? This cannot be undone.`)) return;
+    async function deleteLead() {
+      if (!state.selectedLeadId) return;
+      const lead = state.leads.find(l => l.id === state.selectedLeadId);
+      if (!confirm(`Delete "${lead?.org_name}"? This cannot be undone.`)) return;
 
-  const { error } = await db
-    .from('group_order_leads')
-    .delete()
-    .eq('id', state.selectedLeadId);
+      const { error } = await db
+        .from('group_order_leads')
+        .delete()
+        .eq('id', state.selectedLeadId);
 
-  if (error) { showToast('Error deleting lead', 'error'); return; }
+      if (error) { showToast('Error deleting lead', 'error'); return; }
 
-  showToast('Lead deleted');
-  closePanel();
-  await loadLeads();
-}
+      showToast('Lead deleted');
+      closePanel();
+      await loadLeads();
+    }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// NEW LEAD MODAL
-// ─────────────────────────────────────────────────────────────────────────────
-function openNewLeadModal(defaultStage = 'new_lead') {
-  document.getElementById('modalBody').innerHTML = newLeadForm(defaultStage);
-  document.getElementById('leadModal').classList.add('open');
-  setTimeout(() => document.getElementById('nf_org_name')?.focus(), 100);
-}
+    // ─────────────────────────────────────────────────────────────────────────────
+    // NEW LEAD MODAL
+    // ─────────────────────────────────────────────────────────────────────────────
+    function openNewLeadModal(defaultStage = 'new_lead') {
+      document.getElementById('modalBody').innerHTML = newLeadForm(defaultStage);
+      document.getElementById('leadModal').classList.add('open');
+      setTimeout(() => document.getElementById('nf_org_name')?.focus(), 100);
+    }
 
-function openNewLeadModalStage(stage) { openNewLeadModal(stage); }
+    function openNewLeadModalStage(stage) { openNewLeadModal(stage); }
 
-function closeModal() {
-  document.getElementById('leadModal').classList.remove('open');
-}
+    function closeModal() {
+      document.getElementById('leadModal').classList.remove('open');
+    }
 
-function newLeadForm(defaultStage) {
-  return `
+    function newLeadForm(defaultStage) {
+      return `
     <div class="field-group">
       <div class="field-label">Organisation Name *</div>
       <input class="field-input" id="nf_org_name" placeholder="e.g. Maple Ridge Hospital">
@@ -761,81 +1386,82 @@ function newLeadForm(defaultStage) {
       <textarea class="field-input field-textarea" id="nf_internal_notes" placeholder="Initial context…"></textarea>
     </div>
   `;
-}
+    }
 
-async function saveNewLead() {
-  const org = document.getElementById('nf_org_name').value.trim();
-  if (!org) { showToast('Organisation name is required', 'error'); return; }
+    async function saveNewLead() {
+      const org = document.getElementById('nf_org_name').value.trim();
+      if (!org) { showToast('Organisation name is required', 'error'); return; }
 
-  const payload = {
-    org_name:           org,
-    contact_name:       document.getElementById('nf_contact_name').value.trim() || null,
-    contact_email:      document.getElementById('nf_contact_email').value.trim() || null,
-    contact_phone:      document.getElementById('nf_contact_phone').value.trim() || null,
-    brand_preferences:  document.getElementById('nf_brand_preferences').value.trim() || null,
-    colour_preferences: document.getElementById('nf_colour_preferences').value.trim() || null,
-    has_male_uniforms:  document.getElementById('nf_male').checked,
-    has_female_uniforms:document.getElementById('nf_female').checked,
-    embroidery_notes:   document.getElementById('nf_embroidery_notes').value.trim() || null,
-    estimated_value:    document.getElementById('nf_estimated_value').value || null,
-    item_count:         document.getElementById('nf_item_count').value || null,
-    stage:              document.getElementById('nf_stage').value,
-    next_followup_date: document.getElementById('nf_next_followup_date').value || null,
-    internal_notes:     document.getElementById('nf_internal_notes').value.trim() || null,
-  };
+      const payload = {
+        org_name: org,
+        contact_name: document.getElementById('nf_contact_name').value.trim() || null,
+        contact_email: document.getElementById('nf_contact_email').value.trim() || null,
+        contact_phone: document.getElementById('nf_contact_phone').value.trim() || null,
+        brand_preferences: document.getElementById('nf_brand_preferences').value.trim() || null,
+        colour_preferences: document.getElementById('nf_colour_preferences').value.trim() || null,
+        has_male_uniforms: document.getElementById('nf_male').checked,
+        has_female_uniforms: document.getElementById('nf_female').checked,
+        embroidery_notes: document.getElementById('nf_embroidery_notes').value.trim() || null,
+        estimated_value: document.getElementById('nf_estimated_value').value || null,
+        item_count: document.getElementById('nf_item_count').value || null,
+        stage: document.getElementById('nf_stage').value,
+        next_followup_date: document.getElementById('nf_next_followup_date').value || null,
+        internal_notes: document.getElementById('nf_internal_notes').value.trim() || null,
+      };
 
-  const { data, error } = await db
-    .from('group_order_leads')
-    .insert(payload)
-    .select()
-    .single();
+      const { data, error } = await db
+        .from('group_order_leads')
+        .insert(payload)
+        .select()
+        .single();
 
-  if (error) { showToast('Error creating lead: ' + error.message, 'error'); return; }
+      if (error) { showToast('Error creating lead: ' + error.message, 'error'); return; }
 
-  showToast('Lead created ✓');
-  closeModal();
-  await loadLeads();
-  openLead(data.id);
-}
+      showToast('Lead created ✓');
+      closeModal();
+      await loadLeads();
+      openLead(data.id);
+    }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-function esc(str) {
-  if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+    // ─────────────────────────────────────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────────────────────────────────────
+    function esc(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
-}
+    function formatDate(d) {
+      if (!d) return '';
+      return new Date(d + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+    }
 
-function formatDateTime(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
+    function formatDateTime(d) {
+      if (!d) return '';
+      return new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
 
-function formatStage(s) {
-  return STAGES.find(st => st.key === s)?.label || s;
-}
+    function formatStage(s) {
+      return STAGES.find(st => st.key === s)?.label || s;
+    }
 
-let toastTimeout;
-function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.background = type === 'error' ? '#ef4444' : '#1e293b';
-  t.classList.add('show');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
-}
+    let toastTimeout;
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.background = type === 'error' ? '#ef4444' : '#1e293b';
+      t.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+    }
 
-// ─────────────────────────────────────────────────────────────────────────────
-init();
-</script>
+    // ─────────────────────────────────────────────────────────────────────────────
+    init();
+  </script>
 </body>
+
 </html>
