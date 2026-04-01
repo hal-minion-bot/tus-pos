@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TUS POS Sales Entry</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #003366;
+            color: white;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        header .logo {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+        }
+
+        header .logo svg {
+            width: 44px;
+            height: 44px;
+        }
+
+        header .brand-name {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        header h1 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #C8E6DD;
+            white-space: nowrap;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Quick Entry Card */
+        .quick-entry {
+            background: white;
+            border-radius: 12px;
+            padding: 24px 28px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            margin-bottom: 28px;
+            border-left: 4px solid #e85d04;
+        }
+
+        .quick-entry h2 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .entry-grid {
+            display: grid;
+            grid-template-columns: 160px 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #dde1ea;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #1a1a2e;
+            background: #fafbfc;
+            transition: border-color 0.15s;
+            outline: none;
+        }
+
+        input[type="date"]:focus,
+        input[type="number"]:focus {
+            border-color: #e85d04;
+            background: white;
+        }
+
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #e85d04;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c94e03;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        .btn-save {
+            background: #0d9488;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #0f766e;
+        }
+
+        .btn-save:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Recent Table */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .table-card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-card-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .table-card-header small {
+            font-size: 12px;
+            color: #888;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: #f8f9fb;
+            padding: 10px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.1s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #fafbfc;
+        }
+
+        tbody td {
+            padding: 10px 16px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .date-cell {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .week-badge {
+            display: inline-block;
+            background: #e8f4f8;
+            color: #0369a1;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        .zero-value {
+            color: #bbb;
+        }
+
+        .pos-value {
+            color: #065f46;
+            font-weight: 600;
+        }
+
+        .neg-value {
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+        .inline-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .inline-input {
+            width: 110px;
+            padding: 6px 10px;
+            border: 1.5px solid #dde1ea;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1a1a2e;
+            background: #fafbfc;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .inline-input:focus {
+            border-color: #e85d04;
+            background: white;
+        }
+
+        .inline-input.dirty {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .actions-cell {
+            text-align: right;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.2s ease;
+            min-width: 220px;
+        }
+
+        .toast.success {
+            background: #0d9488;
+        }
+
+        .toast.error {
+            background: #dc2626;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(40px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .today-row {
+            background: #fff8f5;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .dot-green {
+            background: #10b981;
+        }
+
+        .dot-orange {
+            background: #f59e0b;
+        }
+
+        .conn-status {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-left">
+            <div class="logo">
+                <svg viewBox="0 0 220 220" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve"
+                    style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+                    <g>
+                        <circle cx="109.644" cy="109.644" r="109.644" style="fill:#fff;" />
+                        <circle cx="109.644" cy="109.644" r="98.644" style="fill:#036;" />
+                        <path
+                            d="M188.756,79.58c0,-1.793 -3.108,-2.294 -4.943,-2.674c-3.674,-0.76 -11.628,-1.885 -17.101,-1.885c-6.721,0 -15.625,0.096 -23.042,5.722c-3.99,3.027 -5.628,8.923 -5.628,13.931c0,4.044 -0.7,12.368 8.022,19.038c5.55,4.244 25.855,6.443 25.256,12.545c-0.374,3.803 -5.463,4.604 -9.206,4.582c-4.645,-0.026 -15.187,-1.888 -18.604,-2.795c-1.539,-0.408 -2.571,0.072 -2.771,0.98c-0.528,2.396 -2.193,9.657 -2.8,12.435c-0.232,1.062 -0.252,1.84 0.766,2.221c4.013,1.502 11.065,4.015 23.716,4.015c9.191,-0 29.842,-1.94 30.473,-19.839c0.541,-15.355 -10.279,-20.555 -15.059,-22.271c-6.18,-2.219 -18.664,-4.21 -18.578,-9.159c0.058,-3.322 4.89,-4.119 10.906,-4.119c6.016,0 13.103,2.133 16.061,2.802c0.814,0.184 1.87,-0.771 1.922,-1.603c0.172,-2.73 0.61,-11.191 0.61,-13.926Z"
+                            style="fill:#fff;" />
+                        <path
+                            d="M101.201,101.33c-0,-0.67 -0.454,-1.056 -1.223,-1.056l-18.065,-0c-0.555,-0 -1.089,0.458 -1.089,1.259l-0,24.216c-0,12.695 7.952,21.33 26.556,21.33c18.604,-0 28.565,-9.199 28.565,-23.923c0,-1.152 -0.059,-34.375 -0.059,-45.383c0,-0.919 -0.7,-1.326 -1.272,-1.326c-4.197,-0 -15.852,-0.136 -18.35,-0.136c-0.743,0 -0.813,0.491 -0.813,1.087c-0,6.148 0.216,42.436 0.216,43.739c0,8.65 -4.696,9.942 -7.107,9.887c-2.412,-0.055 -7.359,-1.367 -7.359,-10.22l-0,-19.474Z"
+                            style="fill:#ff6f00;" />
+                        <path
+                            d="M101.216,76.694c0,-0.521 -0.251,-0.904 -0.9,-0.904l-69.149,0c-0.863,0 -1.078,0.608 -1.078,0.921l0,17.25c0,0.723 0.562,1.147 1.114,1.147l16.297,0c0.388,0 0.606,0.505 0.61,0.761c0.119,7.627 0.176,42.122 0.186,48.891c0.001,0.746 0.469,1.162 1.214,1.162c3.177,0 16.502,0.134 19.813,0.134c0.454,0 0.75,-0.446 0.75,-1.136c-0,-6.769 0.098,-41.592 0.209,-49.25c0.002,-0.189 -0.088,-0.562 0.521,-0.562l29.341,0c0.665,0 1.072,-0.474 1.072,-1.139l0,-17.275Z"
+                            style="fill:#fff;" />
+                    </g>
+                </svg>
+            </div>
+            <span class="brand-name">The Uniform Store</span>
+        </div>
+        <div class="header-right">
+            <h1>POS Sales Entry</h1>
+            <div class="conn-status" id="conn-status">
+                <span class="status-dot dot-orange"></span> Connecting…
+            </div>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <div class="container">
+
+        <!-- Quick Entry -->
+        <div class="quick-entry">
+            <h2>Enter / Update a Day</h2>
+            <div class="entry-grid">
+                <div>
+                    <label for="q-date">Date</label>
+                    <input type="date" id="q-date" />
+                </div>
+                <div>
+                    <label for="q-gross">POS Gross ($)</label>
+                    <input type="number" id="q-gross" step="0.01" placeholder="0.00" />
+                </div>
+                <div>
+                    <label for="q-tax">POS Tax ($)</label>
+                    <input type="number" id="q-tax" step="0.01" placeholder="0.00" />
+                </div>
+                <div>
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" id="q-save-btn" onclick="quickSave()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Rows Table -->
+        <div class="table-card">
+            <div class="table-card-header">
+                <div>
+                    <h2>Recent Days</h2>
+                    <small>Click any value to edit inline — last 30 days</small>
+                </div>
+                <button class="btn btn-sm" style="background:#f0f2f5; color:#555;" onclick="loadRows()">↻
+                    Refresh</button>
+            </div>
+            <div id="table-body">
+                <div class="loading">Loading data…</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yqvzausypbgiwutwxmtk.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxdnphdXN5cGJnaXd1dHd4bXRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODE1NzUsImV4cCI6MjA4OTc1NzU3NX0.HNNql_MbmfoDl69LeJr26zyP-CyXu45JOvWbYHh0e4c';
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let rowData = [];
+
+        // Set today's date as default
+        const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        document.getElementById('q-date').value = todayStr;
+
+        // ── Connection check ──────────────────────────────────────────────────────
+        async function checkConnection() {
+            const { error } = await db.from('daily_sales').select('id').limit(1);
+            const el = document.getElementById('conn-status');
+            if (error) {
+                el.innerHTML = '<span class="status-dot" style="background:#ef4444"></span> Error';
+            } else {
+                el.innerHTML = '<span class="status-dot dot-green"></span> Connected';
+            }
+        }
+
+        // ── Load table ────────────────────────────────────────────────────────────
+        async function loadRows() {
+            document.getElementById('table-body').innerHTML = '<div class="loading">Loading…</div>';
+
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const cutoff = thirtyDaysAgo.toLocaleDateString('en-CA');
+
+            const { data, error } = await db
+                .from('daily_sales')
+                .select('id, date, fy, week_num, tus_pos_gross, tus_pos_tax')
+                .gte('date', cutoff)
+                .order('date', { ascending: false });
+
+            if (error) {
+                document.getElementById('table-body').innerHTML = `<div class="loading" style="color:#dc2626">Error: ${error.message}</div>`;
+                return;
+            }
+
+            rowData = data;
+            renderTable(data);
+        }
+
+        function renderTable(rows) {
+            if (!rows || rows.length === 0) {
+                document.getElementById('table-body').innerHTML = '<div class="loading">No rows found.</div>';
+                return;
+            }
+
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+            let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Week</th>
+            <th>POS Gross</th>
+            <th>POS Tax</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+            rows.forEach(row => {
+                const isToday = row.date === todayStr;
+                const rowClass = isToday ? 'today-row' : '';
+
+                // Parse date for display
+                const d = new Date(row.date + 'T12:00:00');
+                const dayName = dayNames[d.getDay()];
+                const dateDisplay = `${dayName}, ${d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}`;
+
+                const gross = parseFloat(row.tus_pos_gross);
+                const tax = parseFloat(row.tus_pos_tax);
+
+                const grossClass = gross === 0 ? 'zero-value' : gross < 0 ? 'neg-value' : 'pos-value';
+                const taxClass = tax === 0 ? 'zero-value' : tax < 0 ? 'neg-value' : 'pos-value';
+
+                html += `
+        <tr class="${rowClass}" id="row-${row.id}">
+          <td class="date-cell">
+            ${isToday ? '<strong>Today &mdash; </strong>' : ''}${dateDisplay}
+          </td>
+          <td><span class="week-badge">FY${row.fy} W${row.week_num}</span></td>
+          <td>
+            <div class="inline-inputs">
+              <input class="inline-input" id="gross-${row.id}" type="number" step="0.01"
+                value="${gross.toFixed(2)}"
+                oninput="markDirty(${row.id})"
+                onkeydown="handleKey(event, ${row.id})" />
+            </div>
+          </td>
+          <td>
+            <div class="inline-inputs">
+              <input class="inline-input" id="tax-${row.id}" type="number" step="0.01"
+                value="${tax.toFixed(2)}"
+                oninput="markDirty(${row.id})"
+                onkeydown="handleKey(event, ${row.id})" />
+            </div>
+          </td>
+          <td class="actions-cell">
+            <button class="btn btn-sm btn-save" id="save-${row.id}"
+              onclick="saveRow(${row.id})" disabled>Save</button>
+          </td>
+        </tr>
+      `;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('table-body').innerHTML = html;
+        }
+
+        function markDirty(id) {
+            document.getElementById(`gross-${id}`).classList.add('dirty');
+            document.getElementById(`tax-${id}`).classList.add('dirty');
+            document.getElementById(`save-${id}`).disabled = false;
+        }
+
+        function handleKey(event, id) {
+            if (event.key === 'Enter') saveRow(id);
+        }
+
+        // ── Save a row inline ─────────────────────────────────────────────────────
+        async function saveRow(id) {
+            const grossVal = parseFloat(document.getElementById(`gross-${id}`).value) || 0;
+            const taxVal = parseFloat(document.getElementById(`tax-${id}`).value) || 0;
+            const btn = document.getElementById(`save-${id}`);
+            btn.disabled = true;
+            btn.textContent = '…';
+
+            const { error } = await db
+                .from('daily_sales')
+                .update({
+                    tus_pos_gross: grossVal.toFixed(2),
+                    tus_pos_tax: taxVal.toFixed(2),
+                    last_updated: new Date().toISOString()
+                })
+                .eq('id', id);
+
+            if (error) {
+                toast(`Error: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Save';
+            } else {
+                toast('Saved ✓', 'success');
+                btn.textContent = 'Saved';
+                document.getElementById(`gross-${id}`).classList.remove('dirty');
+                document.getElementById(`tax-${id}`).classList.remove('dirty');
+                setTimeout(() => {
+                    btn.textContent = 'Save';
+                }, 2000);
+            }
+        }
+
+        // ── Quick save (top form) ─────────────────────────────────────────────────
+        async function quickSave() {
+            const dateVal = document.getElementById('q-date').value;
+            const grossVal = parseFloat(document.getElementById('q-gross').value) || 0;
+            const taxVal = parseFloat(document.getElementById('q-tax').value) || 0;
+            const btn = document.getElementById('q-save-btn');
+
+            if (!dateVal) { toast('Please select a date.', 'error'); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+
+            // Check if row exists for that date
+            const { data: existing, error: fetchErr } = await db
+                .from('daily_sales')
+                .select('id')
+                .eq('date', dateVal)
+                .single();
+
+            if (fetchErr && fetchErr.code !== 'PGRST116') {
+                toast(`Error: ${fetchErr.message}`, 'error');
+                btn.disabled = false; btn.textContent = 'Save';
+                return;
+            }
+
+            if (!existing) {
+                toast(`No row exists for ${dateVal}. The sync must run first to create the row.`, 'error');
+                btn.disabled = false; btn.textContent = 'Save';
+                return;
+            }
+
+            const { error } = await db
+                .from('daily_sales')
+                .update({
+                    tus_pos_gross: grossVal.toFixed(2),
+                    tus_pos_tax: taxVal.toFixed(2),
+                    last_updated: new Date().toISOString()
+                })
+                .eq('date', dateVal);
+
+            if (error) {
+                toast(`Error: ${error.message}`, 'error');
+            } else {
+                toast(`Saved for ${dateVal} ✓`, 'success');
+                document.getElementById('q-gross').value = '';
+                document.getElementById('q-tax').value = '';
+                loadRows();
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Save';
+        }
+
+        // ── Toast ─────────────────────────────────────────────────────────────────
+        function toast(msg, type = 'success') {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = msg;
+            document.getElementById('toast-container').appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        }
+
+        // ── Init ──────────────────────────────────────────────────────────────────
+        checkConnection();
+        loadRows();
+    </script>
+
+</body>
+
+</html>
