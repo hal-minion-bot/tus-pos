@@ -375,6 +375,11 @@
       color: #475569;
     }
 
+    .field-textarea-lg {
+      min-height: 150px;
+    }
+
+    
     /* Tabs */
     .panel-tabs {
       display: flex;
@@ -1125,7 +1130,7 @@
 
     <div class="field-group">
       <div class="field-label">Internal Notes</div>
-      <textarea class="field-input field-textarea" id="f_internal_notes" placeholder="Anything the team should know…">${esc(lead.internal_notes || '')}</textarea>
+      <textarea class="field-input field-textarea field-textarea-lg" id="f_internal_notes" placeholder="Anything the team should know…">${esc(lead.internal_notes || '')}</textarea>
     </div>
   `;
     }
