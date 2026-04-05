@@ -425,7 +425,7 @@ async function loadLeadsForSelector() {
     const { data, error } = await db
       .from('group_order_leads')
       .select('id, org_name, contact_name, contact_email, contact_phone, brand_preferences, colour_preferences, embroidery_notes, internal_notes, stage')
-      .not('stage', 'in', '("won","lost")')
+      .in('stage', ['new_lead', 'discovery', 'quoting', 'follow_up'])
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
