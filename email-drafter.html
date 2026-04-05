@@ -424,7 +424,7 @@ async function loadLeadsForSelector() {
   try {
     const { data, error } = await db
       .from('group_order_leads')
-      .select('id, org_name, contact_name, contact_email, contact_phone, brand_preferences, colour_preferences, stage, notes, what_they_need')
+      .select('id, org_name, contact_name, contact_email, contact_phone, brand_preferences, colour_preferences, embroidery_notes, internal_notes, stage')
       .not('stage', 'in', '("won","lost")')
       .order('updated_at', { ascending: false });
 
@@ -468,12 +468,12 @@ function loadLeadFromCRM(leadId) {
 
   // Build a "what they need" string from available fields
   const needsParts = [];
-  if (lead.what_they_need)      needsParts.push(lead.what_they_need);
   if (lead.brand_preferences)   needsParts.push('Brand preference: ' + lead.brand_preferences);
   if (lead.colour_preferences)  needsParts.push('Colour preference: ' + lead.colour_preferences);
+  if (lead.embroidery_notes)    needsParts.push('Embroidery: ' + lead.embroidery_notes);
   if (needsParts.length)        document.getElementById('f_needs').value = needsParts.join('. ');
 
-  if (lead.notes)          document.getElementById('f_touchpoint').value = lead.notes;
+  if (lead.internal_notes) document.getElementById('f_touchpoint').value = lead.internal_notes;
 
   updateSaveCRMButtonVisibility();
   showToast('Lead loaded — review and adjust the fields as needed');
