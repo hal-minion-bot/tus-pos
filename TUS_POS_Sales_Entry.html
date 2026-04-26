@@ -5,8 +5,43 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TUS POS Sales Entry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
+        rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ============================================================
+           TUS DESIGN TOKENS
+           ============================================================ */
+        :root {
+            --tus-navy:        #003366;
+            --tus-navy-deep:   #0d123c;
+            --tus-orange:      #ff6f00;
+            --tus-orange-deep: #cc5900;
+            --tus-mint:        #c8e6dd;
+            --tus-cream:       #efe8de;
+            --tus-ink:         #3c4653;
+            --tus-ink-2:       #3d4246;
+            --tus-muted:       #4b5563;
+            --tus-line:        #e5e7eb;
+            --tus-bg:          #ffffff;
+            --tus-bg-soft:     #f7f6f3;
+
+            --font-display: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+            --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+
+            --shadow-card:  0 2px 8px rgba(13, 18, 60, 0.08);
+            --shadow-pop:   0 4px 16px rgba(13, 18, 60, 0.12);
+            --shadow-focus: 0 0 0 2px rgba(255, 111, 0, 0.35);
+
+            --tracking-caps: 0.08em;
+            --tracking-wide: 0.02em;
+
+            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
         *,
         *::before,
         *::after {
@@ -15,33 +50,40 @@
             padding: 0;
         }
 
+        html { font-size: 16px; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f2f5;
-            color: #1a1a2e;
+            font-family: var(--font-body);
+            background: var(--tus-bg-soft);
+            color: var(--tus-ink);
             min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* ============================================================
+           HEADER
+           ============================================================ */
         header {
-            background: #003366;
-            color: white;
+            background: var(--tus-navy);
+            color: #fff;
             padding: 14px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--tus-navy-deep);
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
         }
 
         header .logo {
@@ -53,153 +95,216 @@
         header .logo svg {
             width: 44px;
             height: 44px;
+            display: block;
         }
 
         header .brand-name {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 18px;
+            font-family: var(--font-display);
+            font-size: 16px;
             font-weight: 700;
-            color: white;
-            letter-spacing: 0.02em;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: var(--tracking-caps);
             white-space: nowrap;
         }
 
         header h1 {
-            font-size: 15px;
+            font-family: var(--font-display);
+            font-size: 12px;
             font-weight: 600;
-            color: #C8E6DD;
+            color: var(--tus-mint);
+            text-transform: uppercase;
+            letter-spacing: var(--tracking-caps);
             white-space: nowrap;
         }
 
+        /* ============================================================
+           LAYOUT
+           ============================================================ */
         .container {
             max-width: 900px;
             margin: 0 auto;
-            padding: 32px 24px;
+            padding: 40px 24px;
         }
 
-        /* Quick Entry Card */
+        /* ============================================================
+           QUICK ENTRY CARD
+           ============================================================ */
         .quick-entry {
-            background: white;
-            border-radius: 12px;
-            padding: 24px 28px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            background: #fff;
+            border: 1px solid var(--tus-line);
+            border-left: 4px solid var(--tus-orange);
+            border-radius: 0;
+            padding: 28px;
+            box-shadow: var(--shadow-card);
             margin-bottom: 28px;
-            border-left: 4px solid #e85d04;
         }
 
         .quick-entry h2 {
-            font-size: 15px;
+            font-family: var(--font-display);
+            font-size: 13px;
             font-weight: 600;
-            margin-bottom: 16px;
-            color: #555;
+            color: var(--tus-navy);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: var(--tracking-caps);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--tus-line);
         }
 
         .entry-grid {
             display: grid;
             grid-template-columns: 160px 1fr 1fr auto;
-            gap: 12px;
+            gap: 16px;
             align-items: end;
         }
 
         label {
             display: block;
-            font-size: 12px;
+            font-family: var(--font-display);
+            font-size: 11px;
             font-weight: 600;
-            color: #666;
-            margin-bottom: 5px;
+            color: var(--tus-muted);
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: var(--tracking-caps);
         }
 
+        /* ============================================================
+           FORM FIELDS
+           ============================================================ */
         input[type="date"],
         input[type="number"] {
             width: 100%;
-            padding: 10px 12px;
-            border: 1.5px solid #dde1ea;
-            border-radius: 8px;
+            padding: 12px 14px;
+            font: inherit;
             font-size: 15px;
-            color: #1a1a2e;
-            background: #fafbfc;
-            transition: border-color 0.15s;
+            color: var(--tus-ink);
+            background: #fff;
+            border: 1px solid rgba(60, 70, 83, 0.55);
+            border-radius: 0;
             outline: none;
+            transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
         }
 
         input[type="date"]:focus,
         input[type="number"]:focus {
-            border-color: #e85d04;
-            background: white;
+            border-color: var(--tus-navy);
+            box-shadow: var(--shadow-focus);
         }
 
+        /* ============================================================
+           BUTTONS
+           ============================================================ */
         .btn {
-            padding: 10px 22px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-family: var(--font-display);
             font-weight: 600;
+            font-size: 13px;
+            letter-spacing: var(--tracking-wide);
+            text-transform: uppercase;
+            color: #fff;
+            background: var(--tus-navy);
+            border: 0;
+            border-radius: 0;
             cursor: pointer;
-            transition: all 0.15s;
             white-space: nowrap;
+            min-height: 44px;
+            transition: background 200ms var(--ease-out), transform 120ms var(--ease-out);
+        }
+
+        .btn:hover {
+            background: var(--tus-navy-deep);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
         }
 
         .btn-primary {
-            background: #e85d04;
-            color: white;
+            background: var(--tus-orange);
+            color: #fff;
         }
 
         .btn-primary:hover {
-            background: #c94e03;
+            background: var(--tus-orange-deep);
         }
 
         .btn-primary:disabled {
-            background: #ccc;
+            background: var(--tus-line);
+            color: var(--tus-muted);
             cursor: not-allowed;
         }
 
         .btn-sm {
+            min-height: 32px;
             padding: 6px 14px;
-            font-size: 13px;
+            font-size: 11px;
         }
 
         .btn-save {
-            background: #0d9488;
-            color: white;
+            background: var(--tus-navy);
+            color: #fff;
         }
 
         .btn-save:hover {
-            background: #0f766e;
+            background: var(--tus-navy-deep);
         }
 
         .btn-save:disabled {
-            background: #ccc;
+            background: var(--tus-line);
+            color: var(--tus-muted);
             cursor: not-allowed;
         }
 
-        /* Recent Table */
+        .btn-ghost {
+            background: transparent;
+            color: var(--tus-navy);
+            border: 1px solid var(--tus-navy);
+        }
+
+        .btn-ghost:hover {
+            background: var(--tus-navy);
+            color: #fff;
+        }
+
+        /* ============================================================
+           TABLE CARD
+           ============================================================ */
         .table-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            background: #fff;
+            border: 1px solid var(--tus-line);
+            border-radius: 0;
+            box-shadow: var(--shadow-card);
             overflow: hidden;
         }
 
         .table-card-header {
-            padding: 18px 24px;
-            border-bottom: 1px solid #f0f2f5;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--tus-line);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
         }
 
         .table-card-header h2 {
-            font-size: 15px;
+            font-family: var(--font-display);
+            font-size: 18px;
             font-weight: 600;
+            color: var(--tus-navy);
+            line-height: 1.2;
         }
 
         .table-card-header small {
+            display: block;
+            margin-top: 4px;
             font-size: 12px;
-            color: #888;
+            color: var(--tus-muted);
         }
 
         table {
@@ -208,20 +313,21 @@
         }
 
         thead th {
-            background: #f8f9fb;
-            padding: 10px 16px;
+            background: var(--tus-cream);
+            padding: 12px 16px;
             text-align: left;
+            font-family: var(--font-display);
             font-size: 11px;
-            font-weight: 700;
-            color: #888;
+            font-weight: 600;
+            color: var(--tus-navy);
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            border-bottom: 1px solid #eee;
+            letter-spacing: var(--tracking-caps);
+            border-bottom: 1px solid var(--tus-line);
         }
 
         tbody tr {
-            border-bottom: 1px solid #f3f4f6;
-            transition: background 0.1s;
+            border-bottom: 1px solid var(--tus-line);
+            transition: background 120ms var(--ease-out);
         }
 
         tbody tr:last-child {
@@ -229,36 +335,41 @@
         }
 
         tbody tr:hover {
-            background: #fafbfc;
+            background: var(--tus-bg-soft);
         }
 
         tbody td {
-            padding: 10px 16px;
+            padding: 12px 16px;
             font-size: 14px;
             vertical-align: middle;
         }
 
         .date-cell {
+            font-family: var(--font-display);
             font-weight: 600;
-            color: #1a1a2e;
+            color: var(--tus-navy);
         }
 
         .week-badge {
-            display: inline-block;
-            background: #e8f4f8;
-            color: #0369a1;
+            display: inline-flex;
+            align-items: center;
+            background: var(--tus-mint);
+            color: var(--tus-navy);
+            font-family: var(--font-display);
             font-size: 11px;
             font-weight: 600;
-            padding: 2px 7px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: 0;
+            text-transform: uppercase;
+            letter-spacing: var(--tracking-wide);
         }
 
         .zero-value {
-            color: #bbb;
+            color: #b8bfca;
         }
 
         .pos-value {
-            color: #065f46;
+            color: var(--tus-navy);
             font-weight: 600;
         }
 
@@ -275,35 +386,38 @@
 
         .inline-input {
             width: 110px;
-            padding: 6px 10px;
-            border: 1.5px solid #dde1ea;
-            border-radius: 6px;
+            padding: 8px 10px;
+            font: inherit;
             font-size: 14px;
-            color: #1a1a2e;
-            background: #fafbfc;
+            color: var(--tus-ink);
+            background: #fff;
+            border: 1px solid rgba(60, 70, 83, 0.55);
+            border-radius: 0;
             outline: none;
-            transition: border-color 0.15s;
+            transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
         }
 
         .inline-input:focus {
-            border-color: #e85d04;
-            background: white;
+            border-color: var(--tus-navy);
+            box-shadow: var(--shadow-focus);
         }
 
         .inline-input.dirty {
-            border-color: #f59e0b;
-            background: #fffbeb;
+            border-color: var(--tus-orange);
+            background: #fff8f0;
         }
 
         .actions-cell {
             text-align: right;
         }
 
-        /* Toast */
+        /* ============================================================
+           TOAST
+           ============================================================ */
         #toast-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 24px;
+            right: 24px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
@@ -311,22 +425,25 @@
         }
 
         .toast {
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            animation: slideIn 0.2s ease;
-            min-width: 220px;
+            padding: 14px 20px;
+            border-radius: 0;
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: var(--tracking-wide);
+            box-shadow: var(--shadow-pop);
+            animation: slideIn 200ms var(--ease-out);
+            min-width: 240px;
         }
 
         .toast.success {
-            background: #0d9488;
+            background: var(--tus-navy);
         }
 
         .toast.error {
-            background: #dc2626;
+            background: #c0392b;
         }
 
         @keyframes slideIn {
@@ -341,15 +458,22 @@
             }
         }
 
+        /* ============================================================
+           STATES
+           ============================================================ */
         .loading {
             text-align: center;
-            padding: 40px;
-            color: #888;
+            padding: 48px 24px;
+            color: var(--tus-muted);
             font-size: 14px;
         }
 
         .today-row {
-            background: #fff8f5;
+            background: var(--tus-cream);
+        }
+
+        .today-row:hover {
+            background: var(--tus-cream);
         }
 
         .status-dot {
@@ -365,14 +489,19 @@
         }
 
         .dot-orange {
-            background: #f59e0b;
+            background: var(--tus-orange);
         }
 
         .conn-status {
-            font-size: 12px;
+            font-family: var(--font-display);
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.85);
+            text-transform: uppercase;
+            letter-spacing: var(--tracking-caps);
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
     </style>
 </head>
@@ -443,8 +572,7 @@
                     <h2>Recent Days</h2>
                     <small>Click any value to edit inline — last 30 days</small>
                 </div>
-                <button class="btn btn-sm" style="background:#f0f2f5; color:#555;" onclick="loadRows()">↻
-                    Refresh</button>
+                <button class="btn btn-sm btn-ghost" onclick="loadRows()">↻ Refresh</button>
             </div>
             <div id="table-body">
                 <div class="loading">Loading data…</div>
