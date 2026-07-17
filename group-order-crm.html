@@ -669,6 +669,14 @@
       background: #fff3b0;
     }
 
+    .activity-type-sizing_kit_sent {
+      background: #ffe0b8;
+    }
+
+    .activity-type-sizing_kit_returned {
+      background: #d7efe6;
+    }
+
     /* Add activity */
     .add-activity {
       background: var(--tus-bg-soft);
@@ -1044,6 +1052,8 @@
       { key: 'email', label: 'Email', icon: '✉️' },
       { key: 'quote_sent', label: 'Quote Sent', icon: '📋' },
       { key: 'follow_up_sent', label: 'Follow-up', icon: '📬' },
+      { key: 'sizing_kit_sent', label: 'Kit Sent', icon: '📦' },
+      { key: 'sizing_kit_returned', label: 'Kit Returned', icon: '📥' },
       { key: 'stage_change', label: 'Stage', icon: '🔄' },
     ];
 
@@ -1070,8 +1080,42 @@
 
       if (error) { showToast('Error loading leads: ' + error.message, 'error'); return; }
       state.leads = data || [];
+      await loadKitStatus();
       renderBoard();
       updateStats();
+    }
+
+    // One cheap query for the whole board: latest sent/returned timestamps per
+    // lead, so cards can show the sizing-kit lifecycle without loading every
+    // lead's full activity log.
+    async function loadKitStatus() {
+      const { data } = await db
+        .from('group_order_activities')
+        .select('lead_id, activity_type, created_at')
+        .in('activity_type', ['sizing_kit_sent', 'sizing_kit_returned'])
+        .order('created_at', { ascending: true });
+      state.kitStatus = {};
+      (data || []).forEach(a => {
+        const s = state.kitStatus[a.lead_id] = state.kitStatus[a.lead_id] || {};
+        if (a.activity_type === 'sizing_kit_sent') s.sent = a.created_at;
+        else s.returned = a.created_at;
+      });
+    }
+
+    // Lifecycle: requested (pulsing, needs action) → kit out → returned.
+    // A kit sent before the latest return means a NEW kit is out again.
+    function kitBadge(lead, withDates) {
+      const ks = state.kitStatus?.[lead.id] || {};
+      if (ks.returned && (!ks.sent || ks.sent <= ks.returned)) {
+        return `<span class="badge" style="background:#d7efe6;color:#0a7a44">📥 Kit returned${withDates ? ' ' + formatDateTime(ks.returned) : ''}</span>`;
+      }
+      if (ks.sent) {
+        return `<span class="badge" style="background:var(--tus-cream);color:var(--tus-orange-deep)">📦 Kit out${withDates ? ' since ' + formatDateTime(ks.sent) : ''}</span>`;
+      }
+      if (needsSizingKit(lead)) {
+        return `<span class="badge badge-sizing">📏 Sizing kit${withDates ? ' requested — staff follow-up' : ''}</span>`;
+      }
+      return '';
     }
 
     async function loadActivities(leadId) {
@@ -1140,7 +1184,7 @@
         ${followupBadge}
         ${lead.logo_path ? '<span class="badge" style="background:var(--tus-mint);color:var(--tus-navy)">🎨 Logo</span>' : ''}
         ${lead.name_list_path ? '<span class="badge" style="background:var(--tus-cream);color:var(--tus-navy)">📋 Names</span>' : ''}
-        ${needsSizingKit(lead) ? '<span class="badge badge-sizing">📏 Sizing Kit</span>' : ''}
+        ${kitBadge(lead, false)}
       </div>
     </div>
   `;
@@ -1183,9 +1227,7 @@
 
       renderDetailsTab(lead);
       loadLeadFiles(lead);
-      document.getElementById('panelSizingKit').innerHTML = needsSizingKit(lead)
-        ? '<span class="badge badge-sizing">📏 Sizing kit requested — staff follow-up</span>'
-        : '';
+      document.getElementById('panelSizingKit').innerHTML = kitBadge(lead, true);
       document.getElementById('sidePanel').classList.add('open');
       document.getElementById('backdrop').style.display = 'block';
 
@@ -1467,6 +1509,7 @@
       const lead = state.leads.find(l => l.id === state.selectedLeadId);
       if (lead) {
         updatePanelLastContact(lead.last_contact_by);
+        document.getElementById('panelSizingKit').innerHTML = kitBadge(lead, true);
         await renderActivityTab(lead);
       }
     }
