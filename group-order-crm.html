@@ -347,6 +347,19 @@
       color: #7a5a00;
     }
 
+    /* Sizing-kit requests must jump out — staff have to action them. */
+    .badge-sizing {
+      background: var(--tus-orange);
+      color: #fff;
+      border: 1px solid var(--tus-orange-deep);
+      animation: sizing-pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes sizing-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 111, 0, 0.45); }
+      50% { box-shadow: 0 0 0 4px rgba(255, 111, 0, 0); }
+    }
+
     /* Add card */
     .add-card-btn {
       width: 100%;
@@ -973,6 +986,7 @@
             <option value="lost">❌ Lost</option>
           </select>
           <div id="panelLastContact"></div>
+          <div id="panelSizingKit"></div>
           <button class="panel-close" onclick="closePanel()">✕</button>
         </div>
       </div>
@@ -1125,6 +1139,8 @@
         ${lcBadge}
         ${followupBadge}
         ${lead.logo_path ? '<span class="badge" style="background:var(--tus-mint);color:var(--tus-navy)">🎨 Logo</span>' : ''}
+        ${lead.name_list_path ? '<span class="badge" style="background:var(--tus-cream);color:var(--tus-navy)">📋 Names</span>' : ''}
+        ${needsSizingKit(lead) ? '<span class="badge badge-sizing">📏 Sizing Kit</span>' : ''}
       </div>
     </div>
   `;
@@ -1166,7 +1182,10 @@
       document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
 
       renderDetailsTab(lead);
-      if (lead.logo_path) loadLeadLogo(lead);
+      loadLeadFiles(lead);
+      document.getElementById('panelSizingKit').innerHTML = needsSizingKit(lead)
+        ? '<span class="badge badge-sizing">📏 Sizing kit requested — staff follow-up</span>'
+        : '';
       document.getElementById('sidePanel').classList.add('open');
       document.getElementById('backdrop').style.display = 'block';
 
@@ -1193,7 +1212,7 @@
       if (!lead) return;
       if (tab === 'details') {
         renderDetailsTab(lead);
-        if (lead.logo_path) loadLeadLogo(lead);
+        loadLeadFiles(lead);
       } else renderActivityTab(lead);
     }
 
@@ -1245,10 +1264,15 @@
       <textarea class="field-input field-textarea" id="f_embroidery_notes" placeholder="Logo placement, stitch count, thread colours…">${esc(lead.embroidery_notes || '')}</textarea>
     </div>
 
+    ${(lead.logo_path || lead.name_list_path) ? `
+    <div class="section-header">Customer Files</div>` : ''}
     ${lead.logo_path ? `
-    <div class="section-header">Customer Logo</div>
     <div class="field-group" id="logoBox">
       <div class="loading" style="height:40px">⏳ Loading logo…</div>
+    </div>` : ''}
+    ${lead.name_list_path ? `
+    <div class="field-group" id="nameListBox">
+      <div class="loading" style="height:40px">⏳ Loading name list…</div>
     </div>` : ''}
 
     <div class="section-header">Quote</div>
@@ -1616,6 +1640,31 @@
       box.innerHTML = `
         ${isImg ? `<a href="${data.signedUrl}" target="_blank" rel="noopener"><img src="${data.signedUrl}" alt="Customer logo" style="max-width:220px;max-height:120px;border:1px solid var(--tus-line);padding:6px;background:white;display:block;margin-bottom:8px"></a>` : ''}
         <a class="btn btn-secondary btn-sm" style="text-decoration:none" href="${data.signedUrl}" target="_blank" rel="noopener" download="${esc(name)}">⬇ Download ${esc(name)}</a>`;
+    }
+
+    // Name-embroidery roster (CSV/Excel/Word/PDF/text) uploaded by the quote
+    // builder into the same private bucket — no inline preview, just download.
+    async function loadLeadNameList(lead) {
+      const box = document.getElementById('nameListBox');
+      if (!box) return;
+      const name = lead.name_list_filename || lead.name_list_path.split('/').pop();
+      const { data, error } = await db.storage.from('lead-logos').createSignedUrl(lead.name_list_path, 3600);
+      if (error || !data?.signedUrl) {
+        box.innerHTML = `<div style="font-size:13px;color:var(--tus-ink)">📋 Name list on file: <strong>${esc(name)}</strong> <span style="color:var(--tus-muted)">(preview unavailable — ${esc(error?.message || 'no access')})</span></div>`;
+        return;
+      }
+      box.innerHTML = `<a class="btn btn-secondary btn-sm" style="text-decoration:none" href="${data.signedUrl}" target="_blank" rel="noopener" download="${esc(name)}">📋 Download name list — ${esc(name)}</a>`;
+    }
+
+    function loadLeadFiles(lead) {
+      if (lead.logo_path) loadLeadLogo(lead);
+      if (lead.name_list_path) loadLeadNameList(lead);
+    }
+
+    // The quote builder flags sizing-kit requests in the lead's internal notes
+    // ("SIZING KIT REQUESTED — staff follow-up needed").
+    function needsSizingKit(lead) {
+      return /sizing kit requested/i.test(lead.internal_notes || '');
     }
 
     // Escape first, then turn bare URLs (e.g. Shopify draft-order invoice links
