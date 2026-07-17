@@ -209,7 +209,7 @@
       font-size: 11px;
       font-weight: 700;
       padding: 2px 8px;
-      border-radius: 999px;
+      border-radius: 0;
       letter-spacing: var(--tracking-wide);
     }
 
@@ -229,7 +229,7 @@
 
     .col-cards::-webkit-scrollbar-thumb {
       background: rgba(13, 18, 60, 0.18);
-      border-radius: 2px;
+      border-radius: 0;
     }
 
     /* Stage colours — brand-aligned palette */
@@ -316,7 +316,7 @@
       font-size: 10px;
       font-weight: 600;
       padding: 2px 8px;
-      border-radius: 999px;
+      border-radius: 0;
       text-transform: uppercase;
       letter-spacing: var(--tracking-caps);
       white-space: nowrap;
@@ -492,7 +492,7 @@
 
     .panel-body::-webkit-scrollbar-thumb {
       background: var(--tus-line);
-      border-radius: 2px;
+      border-radius: 0;
     }
 
     /* Fields */
@@ -596,7 +596,7 @@
     .activity-icon {
       width: 32px;
       height: 32px;
-      border-radius: 50%;
+      border-radius: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -624,6 +624,12 @@
       color: var(--tus-ink);
       margin-top: 4px;
       line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .activity-notes a {
+      color: var(--tus-orange-deep);
     }
 
     .activity-type-note {
@@ -1118,6 +1124,7 @@
         ${valueBadge}
         ${lcBadge}
         ${followupBadge}
+        ${lead.logo_path ? '<span class="badge" style="background:var(--tus-mint);color:var(--tus-navy)">🎨 Logo</span>' : ''}
       </div>
     </div>
   `;
@@ -1159,6 +1166,7 @@
       document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
 
       renderDetailsTab(lead);
+      if (lead.logo_path) loadLeadLogo(lead);
       document.getElementById('sidePanel').classList.add('open');
       document.getElementById('backdrop').style.display = 'block';
 
@@ -1183,8 +1191,10 @@
       el.classList.add('active');
       const lead = state.leads.find(l => l.id === state.selectedLeadId);
       if (!lead) return;
-      if (tab === 'details') renderDetailsTab(lead);
-      else renderActivityTab(lead);
+      if (tab === 'details') {
+        renderDetailsTab(lead);
+        if (lead.logo_path) loadLeadLogo(lead);
+      } else renderActivityTab(lead);
     }
 
     function renderDetailsTab(lead) {
@@ -1234,6 +1244,12 @@
       <div class="field-label">Embroidery / Decoration Notes</div>
       <textarea class="field-input field-textarea" id="f_embroidery_notes" placeholder="Logo placement, stitch count, thread colours…">${esc(lead.embroidery_notes || '')}</textarea>
     </div>
+
+    ${lead.logo_path ? `
+    <div class="section-header">Customer Logo</div>
+    <div class="field-group" id="logoBox">
+      <div class="loading" style="height:40px">⏳ Loading logo…</div>
+    </div>` : ''}
 
     <div class="section-header">Quote</div>
     <div class="field-row">
@@ -1290,7 +1306,7 @@
             <div class="activity-icon activity-type-${a.activity_type}">${aType.icon}</div>
             <div class="activity-body">
               <div class="activity-meta">${aType.label}${dirLabel} · ${formatDateTime(a.created_at)}${a.created_by ? ' · ' + esc(a.created_by) : ''}</div>
-              ${a.notes ? `<div class="activity-notes">${esc(a.notes)}</div>` : ''}
+              ${a.notes ? `<div class="activity-notes">${linkify(a.notes)}</div>` : ''}
             </div>
           </div>
         `;
@@ -1580,6 +1596,33 @@
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+    }
+
+    // Logos are uploaded by the B2B Quote Builder into the private `lead-logos`
+    // storage bucket; the anon key has a read-only SELECT policy on that bucket
+    // only, so we fetch a short-lived signed URL to preview/download.
+    async function loadLeadLogo(lead) {
+      const box = document.getElementById('logoBox');
+      if (!box) return;
+      const name = lead.logo_filename || lead.logo_path.split('/').pop();
+      const { data, error } = await db.storage.from('lead-logos').createSignedUrl(lead.logo_path, 3600);
+      if (error || !data?.signedUrl) {
+        // Never show a broken image slot — the file is still in the bucket and
+        // attached to the original sales email.
+        box.innerHTML = `<div style="font-size:13px;color:var(--tus-ink)">🎨 Logo on file: <strong>${esc(name)}</strong> <span style="color:var(--tus-muted)">(preview unavailable — ${esc(error?.message || 'no access')})</span></div>`;
+        return;
+      }
+      const isImg = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i.test(name);
+      box.innerHTML = `
+        ${isImg ? `<a href="${data.signedUrl}" target="_blank" rel="noopener"><img src="${data.signedUrl}" alt="Customer logo" style="max-width:220px;max-height:120px;border:1px solid var(--tus-line);padding:6px;background:white;display:block;margin-bottom:8px"></a>` : ''}
+        <a class="btn btn-secondary btn-sm" style="text-decoration:none" href="${data.signedUrl}" target="_blank" rel="noopener" download="${esc(name)}">⬇ Download ${esc(name)}</a>`;
+    }
+
+    // Escape first, then turn bare URLs (e.g. Shopify draft-order invoice links
+    // in quote-builder activity notes) into clickable links.
+    function linkify(str) {
+      return esc(str).replace(/https?:\/\/[^\s<]+/g,
+        u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
     }
 
     function formatDate(d) {
