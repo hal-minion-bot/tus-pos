@@ -317,13 +317,17 @@
         <input class="field-input" id="s_googleClientId" placeholder="123456789-abc....apps.googleusercontent.com" autocomplete="off">
       </div>
       <div class="settings-note">
-        To enable "Save as Gmail Draft", you need a Google OAuth 2.0 Client ID.<br>
+        To enable "Save as Gmail Draft", you need a Google OAuth 2.0 Client ID.
+        <strong>Google sign-in only works on the published copy of this page</strong>
+        (<code style="background:#f1f5f9;padding:1px 4px;">https://hal-minion-bot.github.io/tus-pos/email-drafter.html</code>)
+        — Google does not allow <code style="background:#f1f5f9;padding:1px 4px;">file://</code> origins, so a locally-opened copy can't sign in.<br>
         <strong>Quick setup:</strong><br>
-        1. Go to <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a> → APIs & Services → Credentials<br>
-        2. Create an OAuth 2.0 Client ID (Web application type)<br>
-        3. Add <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;">file://</code> and your local server URL as authorized JavaScript origins<br>
-        4. Enable the Gmail API for your project<br>
-        5. Paste the Client ID above<br><br>
+        1. Go to <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a> → APIs & Services → Enabled APIs → enable the <strong>Gmail API</strong><br>
+        2. APIs & Services → OAuth consent screen: configure it (External), add yourself as a <strong>test user</strong><br>
+        3. APIs & Services → Credentials → Create Credentials → OAuth client ID → <strong>Web application</strong><br>
+        4. Under "Authorized JavaScript origins" add:
+        <code style="background:#f1f5f9;padding:1px 4px;">https://hal-minion-bot.github.io</code><br>
+        5. Paste the Client ID above (on the published page, so it's saved in that browser)<br><br>
         <em>Without this, you can still copy emails and paste into Gmail manually.</em>
       </div>
     </div>
