@@ -757,6 +757,81 @@
       border-top: 4px solid var(--tus-orange);
     }
 
+    .modal.modal-lg {
+      width: 860px;
+    }
+
+    /* ── Tenders ── */
+    .tender-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: var(--tus-orange);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    .tender-card {
+      border: 1px solid var(--tus-line);
+      border-left: 4px solid var(--tus-line);
+      background: #fff;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .tender-card.score-high { border-left-color: #0a7a44; }
+    .tender-card.score-mid  { border-left-color: var(--tus-orange); }
+
+    .tender-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--tus-navy);
+      margin-bottom: 4px;
+    }
+
+    .tender-title a { color: inherit; text-decoration: none; }
+    .tender-title a:hover { color: var(--tus-orange-deep); text-decoration: underline; }
+
+    .tender-meta {
+      font-size: 12px;
+      color: var(--tus-muted);
+      margin-bottom: 6px;
+      line-height: 1.6;
+    }
+
+    .tender-reason {
+      font-size: 12px;
+      color: var(--tus-ink);
+      background: var(--tus-bg-soft);
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      border-left: 2px solid var(--tus-mint);
+    }
+
+    .tender-score {
+      display: inline-flex;
+      align-items: center;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: #eef0f2;
+      color: var(--tus-muted);
+      margin-right: 8px;
+    }
+
+    .tender-score.score-high { background: #d7efe6; color: #0a7a44; }
+    .tender-score.score-mid  { background: var(--tus-cream); color: var(--tus-orange-deep); }
+
     .modal-header {
       padding: 22px 26px 18px;
       border-bottom: 1px solid var(--tus-line);
@@ -936,6 +1011,7 @@
         </h1>
         <div class="header-actions">
           <a href="email-drafter.html" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">✉ Email Drafter</a>
+          <button class="btn btn-secondary btn-sm" onclick="openTenderModal()">📯 Tenders<span class="tender-count-badge" id="tenderCount" style="display:none;">0</span></button>
           <button class="btn btn-secondary btn-sm" onclick="loadLeads()">↻ Refresh</button>
           <button class="btn btn-primary btn-sm" onclick="openNewLeadModal()">+ New Lead</button>
         </div>
@@ -1024,6 +1100,28 @@
       </div>
     </div>
 
+    <!-- Tenders Modal -->
+    <div class="modal-overlay" id="tenderModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">📯 Government Tenders</div>
+          <button class="panel-close" onclick="closeTenderModal()">✕</button>
+        </div>
+        <div class="modal-body" id="tenderModalBody">
+          <div class="loading">⏳ Loading tenders…</div>
+        </div>
+        <div class="modal-footer">
+          <select class="field-input" id="tenderFilter" style="width:auto;" onchange="renderTenders()">
+            <option value="active">Active</option>
+            <option value="promoted">Promoted to lead</option>
+            <option value="dismissed">Dismissed</option>
+            <option value="all">All</option>
+          </select>
+          <button class="btn btn-secondary" onclick="closeTenderModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -1070,6 +1168,7 @@
     // ─────────────────────────────────────────────────────────────────────────────
     async function init() {
       await loadLeads();
+      loadTenderCount();
     }
 
     async function loadLeads() {
@@ -1661,6 +1760,138 @@
       closeModal();
       await loadLeads();
       openLead(data.id);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TENDERS (CanadaBuys watcher — populated daily by the tender-watch edge fn)
+    // ─────────────────────────────────────────────────────────────────────────────
+    async function loadTenderCount() {
+      const { count } = await db
+        .from('tender_opportunities')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'new');
+      const badge = document.getElementById('tenderCount');
+      if (count > 0) { badge.textContent = count; badge.style.display = 'inline-flex'; }
+      else badge.style.display = 'none';
+    }
+
+    async function openTenderModal() {
+      document.getElementById('tenderModal').classList.add('open');
+      document.getElementById('tenderModalBody').innerHTML = '<div class="loading">⏳ Loading tenders…</div>';
+      const { data, error } = await db
+        .from('tender_opportunities')
+        .select('*')
+        .order('ai_score', { ascending: false })
+        .order('closing_date', { ascending: true });
+      if (error) { showToast('Error loading tenders: ' + error.message, 'error'); return; }
+      state.tenders = data || [];
+      state.tenders.forEach(t => { if (t.status === 'new') t._wasNew = true; });
+      renderTenders();
+
+      // Seen once: badge counts only never-viewed tenders
+      const newIds = state.tenders.filter(t => t.status === 'new').map(t => t.id);
+      if (newIds.length) {
+        await db.from('tender_opportunities').update({ status: 'reviewed' }).in('id', newIds);
+        state.tenders.forEach(t => { if (t.status === 'new') t.status = 'reviewed'; });
+        loadTenderCount();
+      }
+    }
+
+    function closeTenderModal() {
+      document.getElementById('tenderModal').classList.remove('open');
+    }
+
+    function renderTenders() {
+      const filter = document.getElementById('tenderFilter').value;
+      const list = state.tenders.filter(t =>
+        filter === 'all' ? true :
+        filter === 'active' ? (t.status === 'new' || t.status === 'reviewed') :
+        t.status === filter);
+
+      const body = document.getElementById('tenderModalBody');
+      if (!list.length) {
+        body.innerHTML = '<div class="empty-col" style="padding:32px;text-align:center;">No tenders here. The watcher checks CanadaBuys + Ontario bids&amp;tenders portals every morning at 7am.</div>';
+        return;
+      }
+      body.innerHTML = list.map(t => {
+        const cls = t.ai_score >= 70 ? 'score-high' : t.ai_score >= 45 ? 'score-mid' : '';
+        const closing = t.closing_date ? new Date(t.closing_date + 'T00:00:00') : null;
+        const days = closing ? Math.ceil((closing - new Date()) / 86400000) : null;
+        const closeTxt = closing
+          ? `${t.closing_date}${days !== null ? (days < 0 ? ' (closed)' : ` — ${days}d left`) : ''}`
+          : 'n/a';
+        return `
+      <div class="tender-card ${cls}">
+        <div style="display:flex;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
+          <span class="tender-score ${cls}">${t.ai_score ?? '—'}/100</span>
+          <span class="badge" style="background:#eef0f2;color:var(--tus-muted);">${t.source === 'bidsandtenders' ? 'bids&tenders' : 'CanadaBuys'}</span>
+          ${t._wasNew ? '<span class="badge" style="background:var(--tus-cream);color:var(--tus-orange-deep);">NEW</span>' : ''}
+          ${t.status === 'promoted' ? '<span class="badge" style="background:#d7efe6;color:#0a7a44;">✓ Lead created</span>' : ''}
+          ${t.status === 'dismissed' ? '<span class="badge">Dismissed</span>' : ''}
+        </div>
+        <div class="tender-title">${t.notice_url ? `<a href="${esc(t.notice_url)}" target="_blank" rel="noopener">${esc(t.title)} ↗</a>` : esc(t.title)}</div>
+        <div class="tender-meta">
+          ${esc(t.end_user_org || t.buyer_org || 'Unknown buyer')}
+          ${t.regions_delivery ? ' · 📍 ' + esc(t.regions_delivery) : ''}
+          · ⏳ Closes ${closeTxt}
+          ${t.contact_email ? ` · ✉ ${esc(t.contact_email)}` : ''}
+        </div>
+        ${t.ai_reason ? `<div class="tender-reason">${esc(t.ai_reason)}</div>` : ''}
+        ${(t.status === 'new' || t.status === 'reviewed') ? `
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="promoteTender('${t.id}')">➕ Add as lead</button>
+          <button class="btn btn-secondary btn-sm" onclick="dismissTender('${t.id}')">Dismiss</button>
+        </div>` : ''}
+      </div>`;
+      }).join('');
+    }
+
+    async function promoteTender(tenderId) {
+      const t = state.tenders.find(x => x.id === tenderId);
+      if (!t) return;
+
+      const notes = [
+        `Created from CanadaBuys tender (score ${t.ai_score ?? '—'}/100).`,
+        t.solicitation_number ? `Solicitation #: ${t.solicitation_number}` : null,
+        t.closing_date ? `Tender closes: ${t.closing_date}` : null,
+        t.notice_url ? `Notice: ${t.notice_url}` : null,
+        t.ai_reason ? `Assessment: ${t.ai_reason}` : null,
+        t.description ? `\n${t.description.slice(0, 1500)}` : null,
+      ].filter(Boolean).join('\n');
+
+      const { data: lead, error } = await db.from('group_order_leads').insert({
+        org_name: (t.end_user_org || t.buyer_org || t.title).slice(0, 200),
+        contact_name: t.contact_name || null,
+        contact_email: t.contact_email || null,
+        stage: 'new_lead',
+        next_followup_date: t.closing_date || null,
+        internal_notes: notes,
+      }).select().single();
+      if (error) { showToast('Error creating lead: ' + error.message, 'error'); return; }
+
+      await db.from('group_order_activities').insert({
+        lead_id: lead.id,
+        activity_type: 'note',
+        notes: `Lead created from CanadaBuys tender "${t.title}" (${t.reference_number}).`,
+      });
+      await db.from('tender_opportunities')
+        .update({ status: 'promoted', lead_id: lead.id, updated_at: new Date().toISOString() })
+        .eq('id', tenderId);
+
+      t.status = 'promoted'; t.lead_id = lead.id;
+      renderTenders();
+      showToast('Tender added to pipeline ✓');
+      await loadLeads();
+    }
+
+    async function dismissTender(tenderId) {
+      const { error } = await db.from('tender_opportunities')
+        .update({ status: 'dismissed', updated_at: new Date().toISOString() })
+        .eq('id', tenderId);
+      if (error) { showToast('Error: ' + error.message, 'error'); return; }
+      const t = state.tenders.find(x => x.id === tenderId);
+      if (t) t.status = 'dismissed';
+      renderTenders();
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
